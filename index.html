@@ -853,6 +853,11 @@ async function afterLogin(fresh){
   const m=sMeta();
   if(m.uid&&m.uid!==SYNC.user.id){m.version=0;m.dirty=true;}
   await pullNow();
+  /* Une fois vraiment connecté, on ne doit plus rester sur l'écran d'accueil
+     (qui affiche encore "Créer un compte / Google / Se connecter" même une fois
+     authentifié, puisqu'il ne teste que la disponibilité de Supabase, pas SYNC.user).
+     Si aucune donnée existante n'a été restaurée, on avance vers le questionnaire. */
+  if(!S.profile.set&&V.ob&&V.ob.page===-1){V.ob.page=0;render();}
   if(fresh&&SYNC.status==='ok')toast('Connecté : tes données sont synchronisées.');
 }
 /* ---- photos ---- */
