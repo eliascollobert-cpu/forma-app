@@ -664,6 +664,14 @@ svg.fig .fl{stroke:var(--line);stroke-width:2}
 .authlinks{display:flex;justify-content:space-between;margin-top:12px}
 .authdone{text-align:center;padding:10px 0}.authdone svg{color:var(--good)}.authdone p{margin-top:10px;font-weight:600;line-height:1.45}
 .obacc{display:block;margin:10px auto 0}
+.tourdim{position:fixed;inset:0;z-index:69;background:rgba(8,10,18,.55);animation:fx-fadein .2s ease}
+.tourhole{position:fixed;z-index:70;border-radius:16px;box-shadow:0 0 0 9999px rgba(8,10,18,.66);border:2px solid #fff;pointer-events:none;transition:all .25s ease;opacity:0}
+.tourtip{position:fixed;z-index:71;background:var(--surface);color:var(--ink);border-radius:16px;padding:16px;max-width:280px;width:calc(100% - 24px);box-shadow:var(--shadow-lift);left:12px}
+.tourtip h4{font-family:var(--font-d);font-size:16px;margin:0 0 6px}
+.tourtip p{font-size:13.5px;color:var(--muted);line-height:1.45;margin:0}
+.tourtip .btn{margin-top:12px}
+.tourskip{display:block;margin:0 0 8px auto;font-size:12.5px}
+@keyframes fx-fadein{from{opacity:0}to{opacity:1}}
 </style>
 <script>
 /* Supabase JS v2.45.4 — embarquée localement (au lieu d'un CDN tiers) pour éviter les blocages de "Tracking Prevention" (Edge) / ITP sur le stockage de session */
@@ -2150,6 +2158,17 @@ function sheetHTML(){
   }else if(s.type==='guide'){
     const slides=guideSlides();
     const n=slides.length,st=Math.min(s.step||0,n-1),sl=slides[st];
+    if(sl.spot){
+      return `<div class="tourdim"></div>
+        <div class="tourhole" id="tourhole"></div>
+        <div class="tourtip" id="tourtip" role="dialog" aria-modal="true" aria-label="${esc(sl.title)}">
+          <button class="link tourskip" data-act="guideskip">Passer le guide</button>
+          <h4>${esc(sl.title)}</h4>
+          <p>${sl.body}</p>
+          <div class="dots" style="margin:10px 0">${Array.from({length:n},(_,i)=>`<i class="${i<=st?'on':''}"></i>`).join('')}</div>
+          <button class="btn primary block" data-act="guidenext">${st===n-1?'Terminer':'Suivant'}</button>
+        </div>`;
+    }
     title=sl.title;
     body=`${sl.body}
     <div class="dots" style="margin-top:16px">${Array.from({length:n},(_,i)=>`<i class="${i<=st?'on':''}"></i>`).join('')}</div>
@@ -2160,6 +2179,31 @@ function sheetHTML(){
   }
   return `<div class="backdrop" data-act="closesheet"></div><div class="sheetp${V.still?' still':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="grab"></div><div class="sh2"><h2>${esc(title)}</h2><button class="ibtn" data-act="closesheet" aria-label="Fermer">${icon('close',18)}</button></div>${body}</div>`;
 }
+function goGuideStep(step){
+  const slides=guideSlides(),n=slides.length,st=Math.max(0,Math.min(step,n-1)),sl=slides[st];
+  V.still=false;V.sheet={type:'guide',step:st};
+  if(sl.tab)V.tab=sl.tab;
+  render();V.still=true;
+}
+function positionTourSpot(){
+  if(!(V.sheet&&V.sheet.type==='guide'))return;
+  const slides=guideSlides(),sl=slides[Math.min(V.sheet.step||0,slides.length-1)];
+  const hole=$('#tourhole'),tip=$('#tourtip');
+  if(!sl.spot||!hole||!tip)return;
+  const el=document.querySelector(sl.spot);
+  if(!el){hole.style.opacity='0';return;}
+  const r=el.getBoundingClientRect(),pad=8;
+  hole.style.opacity='1';
+  hole.style.left=(r.left-pad)+'px';hole.style.top=(r.top-pad)+'px';
+  hole.style.width=(r.width+pad*2)+'px';hole.style.height=(r.height+pad*2)+'px';
+  const tipH=tip.offsetHeight||160,vh=window.innerHeight,spaceAbove=r.top,spaceBelow=vh-r.bottom;
+  if(spaceAbove>spaceBelow){tip.style.top='';tip.style.bottom=(vh-r.top+16)+'px';}
+  else{tip.style.bottom='';tip.style.top=(r.bottom+16)+'px';}
+  let left=r.left+r.width/2-tip.offsetWidth/2;
+  left=Math.max(12,Math.min(left,window.innerWidth-tip.offsetWidth-12));
+  tip.style.left=left+'px';
+}
+window.addEventListener('resize',()=>positionTourSpot());
 function guideSlides(){
   const feat=(ic,t,d)=>`<div class="acch" style="align-items:flex-start;margin-top:12px"><span class="sic on" style="flex:none">${icon(ic,20)}</span><div><h3 style="font-size:15px">${t}</h3><small>${d}</small></div></div>`;
   const install=(()=>{
@@ -2175,14 +2219,15 @@ function guideSlides(){
     return `<p class="sub">Depuis le menu de ton navigateur, cherche <b>Installer l'application</b> ou <b>Ajouter à l'écran d'accueil</b> : tu retrouveras Forma comme une vraie appli, en plein écran.</p>`;
   })();
   return [
-    {title:'Bienvenue sur Forma 👋',body:`<p class="sub">Un rapide tour avant de commencer.</p>
+    {title:'Bienvenue sur Forma 👋',body:`<p class="sub">Un rapide tour avant de commencer — on va se balader ensemble dans l'appli.</p>
       ${feat('dumbbell','Tes séances','Ajoute des exercices, note tes séries, poids et répétitions.')}
       ${feat('utensils','Tes repas','Cherche un aliment ou dis simplement ce que tu as mangé.')}
       ${feat('spark','Le coach','Des suggestions de séances et de repas adaptées à ton profil.')}
       ${feat('chart','Ton suivi','Poids, photos et progression, semaine après semaine.')}`},
-    {title:'Tes séances',body:`<p class="sub">Sur l'onglet <b>Séances</b>, ajoute un exercice depuis la bibliothèque (ou crée le tien), puis note chaque série au fur et à mesure. Un chrono de repos se lance automatiquement, et tes records personnels sont détectés tout seuls.</p>`},
-    {title:'Tes repas',body:`<p class="sub">Sur l'onglet <b>Repas</b>, cherche un aliment dans la base, ou appuie sur <b>Dis-le à Forma</b> et décris ton repas en langage naturel — les calories et macros sont calculées pour toi.</p>`},
-    {title:'Ton suivi',body:`<p class="sub">Note ton poids régulièrement et ajoute des photos de progression : tu retrouveras tout sur l'onglet <b>Suivi</b>, avec des graphiques d'évolution.</p>`},
+    {title:'Tes séances',tab:'workout',spot:'nav button[data-t="workout"]',body:`Ajoute un exercice depuis la bibliothèque, puis note chaque série au fur et à mesure. Un chrono de repos se lance automatiquement, et tes records personnels sont détectés tout seuls.`},
+    {title:'Tes repas',tab:'meals',spot:'nav button[data-t="meals"]',body:`Cherche un aliment dans la base, ou dis simplement ce que tu as mangé en langage naturel — les calories et macros sont calculées pour toi.`},
+    {title:'Ton suivi',tab:'progress',spot:'nav button[data-t="progress"]',body:`Note ton poids régulièrement et ajoute des photos de progression : tu retrouveras tout ici, avec des graphiques d'évolution.`},
+    {title:'Ton coach',tab:'coach',spot:'nav button[data-t="coach"]',body:`Modifie ton programme, tes objectifs, ton matériel ou tes préférences à tout moment.`},
     {title:'Ajoute Forma à ton écran d\'accueil',body:install}
   ];
 }
@@ -2193,6 +2238,7 @@ function renderSheet(){
   document.body.style.overflow=(V.sheet||V.play)?'hidden':'';
   if(V.sheet&&V.sheet.type==='food'&&V.sheet.sel!==null&&V.sheet.sel!==undefined)updateFoodPreview();
   if(V.sheet&&V.sheet.type==='tech')figStart();
+  if(V.sheet&&V.sheet.type==='guide')requestAnimationFrame(positionTourSpot);
 }
 function openSheet(s,focusId){V.still=false;V.sheet=s;renderSheet();V.still=true;if(focusId)setTimeout(()=>{const e=document.getElementById(focusId);if(e)e.focus();},60);}
 function closeSheet(){if(V.sheet&&V.sheet.busy&&V.ctl)V.ctl.abort();if(V.sheet&&V.sheet.type==='guide'&&!S.guideSeen){S.guideSeen=true;save();}V.sheet=null;renderSheet();}
@@ -4241,9 +4287,9 @@ function act(a,d){
         save();
       }
       V.ob.page++;render();return;}
-    case 'obdone':S.profile.set=true;S.profile.pers=true;V.ob=null;V.tab='today';save();render();if(!S.guideSeen)openSheet({type:'guide',step:0});return;
-    case 'guidenext':{const s=V.sheet;if(!s)return;const n=guideSlides().length;if((s.step||0)>=n-1){S.guideSeen=true;save();closeSheet();return;}s.step=(s.step||0)+1;renderSheet();return;}
-    case 'guideopen':openSheet({type:'guide',step:0});return;
+    case 'obdone':S.profile.set=true;S.profile.pers=true;V.ob=null;V.tab='today';save();render();if(!S.guideSeen)goGuideStep(0);return;
+    case 'guidenext':{const s=V.sheet;if(!s)return;const n=guideSlides().length;if((s.step||0)>=n-1){S.guideSeen=true;save();V.sheet=null;render();return;}goGuideStep((s.step||0)+1);return;}
+    case 'guideopen':goGuideStep(0);return;
     case 'guideskip':S.guideSeen=true;save();closeSheet();return;
     case 'guideinstall':{if(DEFERRED_INSTALL){DEFERRED_INSTALL.prompt();DEFERRED_INSTALL.userChoice.finally(()=>{DEFERRED_INSTALL=null;});}return;}
     case 'authopen':openSheet({type:'auth',mode:d.m||'login',email:SYNC.user?SYNC.user.email:'',err:'',busy:false,unconfirmed:false,resendAt:0});return;
