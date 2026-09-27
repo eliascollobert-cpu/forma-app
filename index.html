@@ -70,7 +70,8 @@ h3{font-family:var(--font-d);font-size:16px;font-weight:700}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
 .avatar{width:44px;height:44px;border-radius:13px;background:var(--grad);color:#fff;font-family:var(--font-d);font-weight:700;font-size:18px;display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;flex:none}
 .pillrow{display:flex;gap:8px;align-items:center}
-.pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font:inherit;color:inherit;cursor:default;font-weight:700;font-size:13px}
+button.pill{cursor:pointer}
 .pill.gold{color:var(--gold)}
 
 /* semaine */
@@ -116,6 +117,14 @@ h3{font-family:var(--font-d);font-size:16px;font-weight:700}
 .tile{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow);transition:transform .18s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .2s}
 .perslist{border-top:1px solid var(--line)}
 .accentgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.accentsw.locked{opacity:.55}
+.avatarsw{width:100%;aspect-ratio:1;border-radius:50%;border:2px solid var(--line);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;color:var(--muted)}
+.avatarsw.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--surface2))}
+.avatarsw.locked{opacity:.55}
+.shoplabels{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:6px}
+.shoplabels span{font-size:10.5px;color:var(--muted);text-align:center;font-weight:600}
+.coinbar{display:inline-flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--gold) 18%,var(--surface2));color:var(--gold);font-weight:800;font-size:14px;padding:8px 14px;border-radius:999px;margin-bottom:14px}
+.coinbar.sm{margin-bottom:0;padding:6px 12px;font-size:13px;flex:none}
 .cmpwrap{position:relative;width:100%;aspect-ratio:3/4;border-radius:16px;overflow:hidden;background:#111;user-select:none}
 .heatgrid{display:flex;gap:3px}
 .heatcol{display:flex;flex-direction:column;gap:3px}
@@ -855,7 +864,7 @@ async function disableNotifications(){
 /* ================= données ================= */
 const KEY='forma-coach-v1';
 let storageOK=true;
-const defaults=()=>({profile:{set:false,name:'',sex:'m',age:28,height:178,weight:75,activity:1.55,goal:'gain',weekGoal:4,rest:90,level:'mid',equip:'gym',time:60,focus:[],limits:[],diet:'none',snacks:true,tone:'coach',tempo:3,sound:true,voice:'hands',voiceName:null,voiceRate:1,pers:false,theme:'auto',accent:'default'},bodyweights:[],workouts:[],meals:[],customEx:[],demo:false,chat:[],brief:null,favs:[],plan:null,customFoods:[],deloadUntil:null,recapSeen:null,photos:[]});
+const defaults=()=>({profile:{set:false,name:'',sex:'m',age:28,height:178,weight:75,activity:1.55,goal:'gain',weekGoal:4,rest:90,level:'mid',equip:'gym',time:60,focus:[],limits:[],diet:'none',snacks:true,tone:'coach',tempo:3,sound:true,voice:'hands',voiceName:null,voiceRate:1,pers:false,theme:'auto',accent:'default',avatar:'letter',title:'none'},bodyweights:[],workouts:[],meals:[],customEx:[],demo:false,chat:[],brief:null,favs:[],plan:null,customFoods:[],deloadUntil:null,recapSeen:null,photos:[],badgesSeen:null,unlocked:[]});
 function merge(o){const d=defaults();return Object.assign(d,o,{profile:Object.assign(d.profile,o.profile||{})});}
 function load(){try{const r=localStorage.getItem(KEY)||localStorage.getItem('coach-muscu-v1');if(r)return merge(JSON.parse(r));}catch(e){storageOK=false;}return defaults();}
 function save(){SCHED={};try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){storageOK=false;}syncDirty();}
@@ -1171,13 +1180,46 @@ function delPhoto(id){return delPhotoLocal(id).then(()=>{if(SYNC.user)removePhot
 
 let S=load();
 const ACCENTS={
-  default:{name:'Corail',accent:'#F2500F',grad:'linear-gradient(135deg,#FF7A2F 0%,#FF3D6E 100%)'},
-  ocean:{name:'Océan',accent:'#0B6FF2',grad:'linear-gradient(135deg,#2FD0FF 0%,#3D5CFF 100%)'},
-  forest:{name:'Forêt',accent:'#0F9F5C',grad:'linear-gradient(135deg,#5CE092 0%,#0F9F5C 100%)'},
-  grape:{name:'Raisin',accent:'#8B3FF2',grad:'linear-gradient(135deg,#B25CFF 0%,#5C3DFF 100%)'},
-  sun:{name:'Soleil',accent:'#E0A200',grad:'linear-gradient(135deg,#FFD24D 0%,#FF9A2F 100%)'},
-  rose:{name:'Rose',accent:'#E0308F',grad:'linear-gradient(135deg,#FF6FB5 0%,#D63BE0 100%)'}
+  default:{name:'Corail',accent:'#F2500F',grad:'linear-gradient(135deg,#FF7A2F 0%,#FF3D6E 100%)',cost:0},
+  ocean:{name:'Océan',accent:'#0B6FF2',grad:'linear-gradient(135deg,#2FD0FF 0%,#3D5CFF 100%)',cost:0},
+  forest:{name:'Forêt',accent:'#0F9F5C',grad:'linear-gradient(135deg,#5CE092 0%,#0F9F5C 100%)',cost:0},
+  grape:{name:'Raisin',accent:'#8B3FF2',grad:'linear-gradient(135deg,#B25CFF 0%,#5C3DFF 100%)',cost:0},
+  sun:{name:'Soleil',accent:'#E0A200',grad:'linear-gradient(135deg,#FFD24D 0%,#FF9A2F 100%)',cost:0},
+  rose:{name:'Rose',accent:'#E0308F',grad:'linear-gradient(135deg,#FF6FB5 0%,#D63BE0 100%)',cost:0},
+  midnight:{name:'Nuit',accent:'#6C5CE7',grad:'linear-gradient(135deg,#3D3D7A 0%,#6C5CE7 100%)',cost:100},
+  emerald:{name:'Émeraude',accent:'#00B894',grad:'linear-gradient(135deg,#00B894 0%,#00CEC9 100%)',cost:150},
+  ember:{name:'Braise',accent:'#D63031',grad:'linear-gradient(135deg,#D63031 0%,#E17055 100%)',cost:200},
+  chrome:{name:'Chrome',accent:'#636E72',grad:'linear-gradient(135deg,#2D3436 0%,#B2BEC3 100%)',cost:300}
 };
+function totalCoinsEarned(){
+  const ws=S.workouts.filter(w=>w.entries.some(e=>e.sets.length));
+  const meals=S.meals.filter(m=>m.name!=='Eau').length;
+  let prCount=0;const byEx={};
+  ws.slice().sort((a,b)=>a.date<b.date?-1:1).forEach(w=>w.entries.forEach(en=>{
+    if(!en.sets.length)return;const top=e1(topSet(en.sets)),pb=byEx[en.exId]||0;if(top>pb+0.01)prCount++;byEx[en.exId]=Math.max(pb,top);
+  }));
+  const badges=badgeDefs().filter(b=>b.earned).length;
+  return ws.length*20+meals*2+prCount*10+badges*50;
+}
+function coinsSpent(){return (S.unlocked||[]).reduce((a,k)=>a+((ACCENTS[k]&&ACCENTS[k].cost)||0),0);}
+function coinsBalance(){return totalCoinsEarned()-coinsSpent();}
+function accentAvailable(k){return (ACCENTS[k].cost||0)===0||((S.unlocked||[]).includes(k));}
+const AVATARS={
+  letter:{glyph:null,cost:0},
+  muscle:{glyph:'💪',cost:50},fire:{glyph:'🔥',cost:75},bolt:{glyph:'⚡',cost:100},
+  trophy:{glyph:'🏆',cost:125},lion:{glyph:'🦁',cost:150},wolf:{glyph:'🐺',cost:150},
+  rocket:{glyph:'🚀',cost:200},crown:{glyph:'👑',cost:300}
+};
+const TITLES={
+  none:{label:'Aucun titre',cost:0},
+  motive:{label:'Motivé(e)',cost:0},
+  iron:{label:'Guerrier du fer',cost:100},
+  beast:{label:'Bête de la fonte',cost:200},
+  machine:{label:'Increvable',cost:150},
+  legend:{label:'Légende Forma',cost:350}
+};
+function isUnlocked(cat,k){const it=cat[k];return !it||((it.cost||0)===0)||((S.unlocked||[]).includes(k));}
+function avatarGlyph(){const a=AVATARS[S.profile.avatar||'letter'];return a&&a.glyph?a.glyph:esc((S.profile.name||'F').charAt(0).toUpperCase());}
 function applyTheme(){
   const mode=S.profile.theme||'auto';
   if(mode==='light'||mode==='dark')document.documentElement.setAttribute('data-theme',mode);
@@ -1909,7 +1951,7 @@ function lineChart(pts,unit){
 
 /* ================= état de l'interface ================= */
 const V={tab:'today',date:today(),mdate:today(),pex:null,draft:{},confirm:null,sheet:null,rest:null,ob:S.profile.set?null:{page:-1},open:{},onbf:{name:'',age:'28',sex:'m',height:'178',weight:'75',activity:'1.55'}};
-const TABS=[['today','Accueil','home'],['workout','Séance','dumbbell'],['meals','Repas','utensils'],['progress','Progrès','chart'],['coach','Coach','spark']];
+const TABS=[['today','Accueil','home'],['workout','Séance','dumbbell'],['meals','Repas','utensils'],['progress','Progrès','chart'],['shop','Boutique','flame'],['coach','Coach','spark']];
 
 /* ================= vues ================= */
 function viewToday(){
@@ -1928,7 +1970,7 @@ function viewToday(){
   ${backupCard()}
   <div class="top">
     <div><h1>${hello}</h1><p class="sub">${fmt(td,{weekday:'long',day:'numeric',month:'long'})}</p></div>
-    <button class="avatar" data-act="tab" data-t="coach" aria-label="Profil">${esc((p.name||'F').charAt(0).toUpperCase())}</button>
+    <button class="avatar" data-act="tab" data-t="coach" aria-label="Profil">${avatarGlyph()}</button>
   </div>
   <div class="pillrow" style="margin-bottom:12px">
     <span class="pill">${icon('dumbbell',15)} ${wc} / ${p.weekGoal} séances</span>
@@ -2093,6 +2135,7 @@ function badgeDefs(){
   }));
   const seen={};ws.forEach(w=>{const wk=weekStart(w.date);seen[wk]=(seen[wk]||0)+1;});
   const weeksHitGoal=Object.keys(seen).filter(wk=>seen[wk]>=S.profile.weekGoal).length;
+  const mealCount=S.meals.filter(m=>m.name!=='Eau').length;
   const list=[
     {id:'first',title:'Première séance',desc:'Enregistre ta première séance complète.',n:ws.length,target:1},
     {id:'ten',title:'10 séances',desc:'Enregistre 10 séances au total.',n:ws.length,target:10},
@@ -2103,9 +2146,23 @@ function badgeDefs(){
     {id:'ton1',title:'1 tonne soulevée',desc:'Cumule 1 000 kg soulevés, toutes séances confondues.',n:totalTon,target:1000},
     {id:'ton10',title:'10 tonnes soulevées',desc:'Cumule 10 000 kg soulevés.',n:totalTon,target:10000},
     {id:'goalweek',title:'Objectif atteint',desc:'Atteins ton objectif de séances sur une semaine.',n:weeksHitGoal,target:1},
-    {id:'photo1',title:'Suivi corporel',desc:'Ajoute une première photo ou mensuration.',n:(V.photos||[]).length,target:1}
+    {id:'photo1',title:'Suivi corporel',desc:'Ajoute une première photo ou mensuration.',n:(V.photos||[]).length,target:1},
+    {id:'meal1',title:'Premier repas',desc:'Enregistre ton premier repas.',n:mealCount,target:1},
+    {id:'meal100',title:'100 repas enregistrés',desc:'Enregistre 100 repas au total.',n:mealCount,target:100},
+    {id:'daystreak7',title:'Une semaine assidue',desc:'7 jours de suite avec une séance ou un repas noté.',n:dayStreak(),target:7},
+    {id:'daystreak30',title:'Un mois de régularité',desc:'30 jours de suite avec une séance ou un repas noté.',n:dayStreak(),target:30}
   ];
   return list.map(b=>Object.assign(b,{earned:b.n>=b.target}));
+}
+function checkNewBadges(){
+  const earned=badgeDefs().filter(b=>b.earned).map(b=>b.id);
+  if(!S.badgesSeen){S.badgesSeen=earned;save();return;}
+  const fresh=earned.filter(id=>!S.badgesSeen.includes(id));
+  if(fresh.length){
+    const byId={};badgeDefs().forEach(b=>byId[b.id]=b);
+    S.badgesSeen=[...S.badgesSeen,...fresh];save();
+    fresh.forEach((id,i)=>setTimeout(()=>toast('🏆 Badge débloqué : '+byId[id].title),i*1700));
+  }
 }
 function badgesHTML(){
   const list=badgeDefs(),got=list.filter(b=>b.earned).length;
@@ -2191,7 +2248,7 @@ function viewCoach(){
   </div>`:''}
   ${AI?chatHTML():''}
   <div class="card">
-    <div class="prof"><div class="avatar">${esc((p.name||'F').charAt(0).toUpperCase())}</div><div><h3 style="font-size:19px">${p.name?esc(p.name):'Mon profil'}</h3><p class="sub">${GOALS[p.goal][0]}</p></div></div>
+    <div class="prof"><div class="avatar">${avatarGlyph()}</div><div><h3 style="font-size:19px">${p.name?esc(p.name):'Mon profil'}</h3><p class="sub">${GOALS[p.goal][0]}${(p.title&&TITLES[p.title]&&p.title!=='none')?' · '+esc(TITLES[p.title].label):''}</p></div></div>
     <div class="seg" style="margin-top:14px" role="group" aria-label="Objectif">${['gain','maintain','cut'].map(g=>`<button class="${p.goal===g?'on':''}" data-act="setgoal" data-g="${g}">${{gain:'Muscle',maintain:'Maintien',cut:'Sèche'}[g]}</button>`).join('')}</div>
     <div style="margin-top:18px"><div class="bigk">${fmtN(t.kcal)}<small>kcal / jour</small></div><p class="sub">Dépense estimée : ${fmtN(t.tdee)} kcal</p>${t.adj?`<p class="sub" style="color:var(--ink);font-weight:700">Ajusté automatiquement de ${t.adj>0?'+':''}${t.adj} kcal selon ta tendance de poids.</p>`:''}</div>
     <div class="tgt"><div><b style="color:var(--prot)">${t.p} g</b><span>Protéines</span></div><div><b style="color:var(--carb)">${t.c} g</b><span>Glucides</span></div><div><b style="color:var(--fat)">${t.f} g</b><span>Lipides</span></div></div>
@@ -2202,13 +2259,57 @@ function viewCoach(){
   ${!deloadActive()?`<button class="link" data-act="startdeload" style="margin:2px 0 6px">${icon('spark',16)} Générer ma semaine allégée</button>`:''}`;
 }
 
+function viewShop(){
+  const earned=totalCoinsEarned(),spent=coinsSpent(),bal=earned-spent;
+  const tab=V.shopTab||'accent';
+  const TABS_SHOP=[['accent','Couleurs'],['avatar','Avatars'],['title','Titres']];
+  let grid;
+  if(tab==='accent'){
+    grid=`<div class="accentgrid">${Object.keys(ACCENTS).map(k=>{
+      const av=isUnlocked(ACCENTS,k),cur=S.profile.accent===k;
+      return `<button class="accentsw ${cur?'on':''} ${av?'':'locked'}" data-act="${av?'setaccent':'buyitem'}" data-cat="accent" data-k="${k}" aria-label="${ACCENTS[k].name}${av?'':' — '+ACCENTS[k].cost+' jetons'}" style="background:${ACCENTS[k].grad}">${cur?icon('check',18):av?'':icon('lock',16)}</button>`;
+    }).join('')}</div>
+    <div class="shoplabels">${Object.keys(ACCENTS).map(k=>`<span>${esc(ACCENTS[k].name)}${ACCENTS[k].cost?' · '+ACCENTS[k].cost:''}</span>`).join('')}</div>`;
+  }else if(tab==='avatar'){
+    grid=`<div class="accentgrid">${Object.keys(AVATARS).map(k=>{
+      const av=isUnlocked(AVATARS,k),cur=(S.profile.avatar||'letter')===k,a=AVATARS[k];
+      return `<button class="avatarsw ${cur?'on':''} ${av?'':'locked'}" data-act="${av?'setavatar':'buyitem'}" data-cat="avatar" data-k="${k}" aria-label="${a.glyph||'Initiale'}${av?'':' — '+a.cost+' jetons'}">${av?(a.glyph||esc((S.profile.name||'F').charAt(0).toUpperCase())):icon('lock',16)}</button>`;
+    }).join('')}</div>
+    <div class="shoplabels">${Object.keys(AVATARS).map(k=>`<span>${AVATARS[k].cost||'Gratuit'}${AVATARS[k].cost?' jetons':''}</span>`).join('')}</div>`;
+  }else{
+    grid=`<div class="perslist">${Object.keys(TITLES).filter(k=>k!=='none').map(k=>{
+      const av=isUnlocked(TITLES,k),cur=S.profile.title===k,t=TITLES[k];
+      return `<button class="persrow" data-act="${av?'settitle':'buyitem'}" data-cat="title" data-k="${k}"><span class="prt"><b>${esc(t.label)}</b><small>${av?(cur?'Sélectionné':'Disponible'):t.cost+' jetons'}</small></span>${cur?icon('check',18):av?icon('right',18):icon('lock',16)}</button>`;
+    }).join('')}</div>`;
+  }
+  const modes=[['auto','Automatique'],['light','Clair'],['dark','Sombre']];
+  return `
+  <div class="top"><div><h1>Boutique</h1><p class="sub">Personnalise ton profil</p></div></div>
+  <div class="card" style="text-align:center;padding:22px">
+    <p class="sub">Solde</p>
+    <div class="bigk" style="justify-content:center;display:flex;align-items:baseline;gap:6px">${bal}<small>jetons</small></div>
+    <p class="sub" style="margin-top:6px">${earned} gagnés au total · ${spent} dépensés</p>
+  </div>
+  <div class="sect"><h2>Comment gagner des jetons</h2></div>
+  <div class="card" style="padding:8px 18px">
+    <div class="prow" style="cursor:default"><span class="ln"><b>Terminer une séance</b><small>+20 jetons</small></span></div>
+    <div class="prow" style="cursor:default"><span class="ln"><b>Enregistrer un repas</b><small>+2 jetons</small></span></div>
+    <div class="prow" style="cursor:default"><span class="ln"><b>Battre un record</b><small>+10 jetons</small></span></div>
+    <div class="prow" style="cursor:default"><span class="ln"><b>Débloquer un badge</b><small>+50 jetons</small></span></div>
+  </div>
+  <div class="sect"><h2>Personnalisation</h2></div>
+  <div class="seg" role="group" aria-label="Catégorie" style="margin-bottom:14px">${TABS_SHOP.map(t=>`<button class="${tab===t[0]?'on':''}" data-act="shoptab" data-k="${t[0]}">${t[1]}</button>`).join('')}</div>
+  <div class="card">${grid}</div>
+  ${tab==='accent'?`<div class="sect"><h2>Thème</h2></div><div class="card"><div class="seg" role="group" aria-label="Thème">${modes.map(m=>`<button class="${(S.profile.theme||'auto')===m[0]?'on':''}" data-act="setthememode" data-m="${m[0]}">${m[1]}</button>`).join('')}</div></div>`:''}`;
+}
 function viewSettings(){
   const p=S.profile,t=T();
   return `
   <div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="ibtn" data-act="tab" data-t="coach" aria-label="Retour">${icon('left',20)}</button><div><h1>Réglages</h1><p class="sub">Profil, personnalisation et compte</p></div></div></div>
   <div class="card" style="display:flex;align-items:center;gap:14px">
-    <div class="avatar" style="width:56px;height:56px;font-size:22px;border-radius:16px">${esc((p.name||'F').charAt(0).toUpperCase())}</div>
+    <div class="avatar" style="width:56px;height:56px;font-size:22px;border-radius:16px">${avatarGlyph()}</div>
     <div style="min-width:0;flex:1"><h3 style="font-size:18px">${p.name?esc(p.name):'Mon profil'}</h3><p class="sub">${GOALS[p.goal][0]} · ${fmtN(t.kcal)} kcal/jour</p></div>
+    <span class="coinbar sm">${icon('flame',14)} ${coinsBalance()}</span>
   </div>
   ${persCard()}
   ${appearanceRow()}
@@ -2315,13 +2416,6 @@ function sheetHTML(){
     const [label,keys]=PREF_GROUPS[s.gi];
     title=label;
     body=`<div class="perslist">${keys.map(k=>prowIc(QS[k].label,esc(qLabel(QS[k])),'openpref',` data-k="${k}"`)).join('')}</div>`;
-  }else if(s.type==='appearance'){
-    title='Apparence';
-    const modes=[['auto','Automatique'],['light','Clair'],['dark','Sombre']];
-    body=`<p class="sub" style="margin-bottom:4px">Thème</p>
-    <div class="seg" role="group" aria-label="Thème">${modes.map(m=>`<button class="${(S.profile.theme||'auto')===m[0]?'on':''}" data-act="setthememode" data-m="${m[0]}">${m[1]}</button>`).join('')}</div>
-    <p class="sub" style="margin:18px 0 8px">Couleur d’accent</p>
-    <div class="accentgrid">${Object.keys(ACCENTS).map(k=>`<button class="accentsw ${S.profile.accent===k?'on':''}" data-act="setaccent" data-k="${k}" aria-label="${ACCENTS[k].name}" style="background:${ACCENTS[k].grad}">${S.profile.accent===k?icon('check',18):''}</button>`).join('')}</div>`;
   }else if(s.type==='records'){
     title='Tous les records';
     const withData=allEx().filter(e=>sessionsOf(e.id).length);
@@ -2617,7 +2711,7 @@ document.addEventListener('pointerdown',e=>FX.ripple(e),{passive:true});
 function render(keep){
   SCHED={};buildProg();rebuildFoods();planSync();
   const y=window.scrollY,onb=!!V.ob;
-  const views={today:viewToday,workout:viewWorkout,meals:viewMeals,progress:viewProgress,coach:viewCoach,settings:viewSettings};
+  const views={today:viewToday,workout:viewWorkout,meals:viewMeals,progress:viewProgress,coach:viewCoach,settings:viewSettings,shop:viewShop};
   $('#main').innerHTML=onb?viewOnb():views[V.tab]();
   const nav=$('#nav');
   nav.style.display=onb?'none':'flex';
@@ -3124,7 +3218,7 @@ function prowIc(label,val,act,extra){
 }
 function appearanceRow(){
   const a=ACCENTS[S.profile.accent]||ACCENTS.default;
-  return `<div class="perslist" style="margin-top:14px"><button class="persrow" data-act="openappearance"><span class="prt"><b>Apparence</b><small>${{light:'Clair',dark:'Sombre',auto:'Automatique'}[S.profile.theme||'auto']} · ${a.name}</small></span><span style="width:22px;height:22px;border-radius:50%;background:${a.grad};flex:none"></span></button></div>`;
+  return `<div class="perslist" style="margin-top:14px"><button class="persrow" data-act="tab" data-t="shop"><span class="prt"><b>Boutique</b><small>${coinsBalance()} jetons · ${a.name}</small></span><span style="width:22px;height:22px;border-radius:50%;background:${a.grad};flex:none"></span></button></div>`;
 }
 function persCard(){
   return `<div class="sect"><h2>Ma personnalisation</h2></div>
@@ -4477,7 +4571,7 @@ const exFam=id=>famOf((exById(id)||{}).m);
 function act(a,d){
   if(a!=='delwk'&&a!=='reset'&&a!=='logout')V.confirm=null;
   switch(a){
-    case 'tab':V.tab=d.t;render();return;
+    case 'tab':V.tab=d.t;if(d.t==='progress')checkNewBadges();render();return;
     case 'dshift':V[d.k]=addDays(V[d.k],+d.n);if(d.k==='mdate')V.ideas=null;render(true);return;
     case 'goto':V.date=d.date;V.tab='workout';render();return;
     case 'daytrain':{S.dayOv=S.dayOv||{};const dt=d.date,ws=weekStart(dt),before=Object.assign({},weekSched(ws));S.dayOv[dt]='train';save();render(true);
@@ -4575,7 +4669,7 @@ function act(a,d){
       if(V.confirm==='wk'){S.workouts=S.workouts.filter(w=>w.date!==V.date);V.confirm=null;save();render(true);toast('Séance supprimée.');}
       else{V.confirm='wk';render(true);}
       return;
-    case 'finish':V.rest=null;tick();openSheet({type:'recap'});return;
+    case 'finish':V.rest=null;tick();checkNewBadges();openSheet({type:'recap'});return;
     case 'rest15':if(V.rest){V.rest.end+=15000;V.rest.total+=15000;tick();}return;
     case 'restskip':V.rest=null;tick();return;
     case 'openfood':OFF_TOKEN++;mergeOFF([]);openSheet({type:'food',slot:d.slot,mode:'search',q:'',sel:null,g:100},'fq');return;
@@ -4629,8 +4723,16 @@ function act(a,d){
     case 'miclisten':toggleListen();return;
     case 'openphotocompare':openSheet({type:'photocompare',beforeId:null,afterId:null});return;
     case 'openrecords':openSheet({type:'records'});return;
-    case 'openappearance':openSheet({type:'appearance'});return;
+    case 'shoptab':V.shopTab=d.k;render(true);return;
     case 'setthememode':S.profile.theme=d.m;save();applyTheme();render(true);return;
+    case 'buyitem':{
+      const cat={accent:ACCENTS,avatar:AVATARS,title:TITLES}[d.cat],k=d.k;
+      if(!cat||!cat[k]||isUnlocked(cat,k))return;
+      const cost=cat[k].cost||0;
+      if(coinsBalance()<cost){toast('Pas assez de jetons ('+coinsBalance()+'/'+cost+').');return;}
+      S.unlocked=[...(S.unlocked||[]),k];save();toast('Débloqué !');render(true);return;}
+    case 'setavatar':S.profile.avatar=d.k;save();render(true);return;
+    case 'settitle':S.profile.title=d.k;save();render(true);return;
     case 'setaccent':S.profile.accent=d.k;save();applyTheme();render(true);return;
     case 'openprefgroup':openSheet({type:'prefgroup',gi:+d.gi});return;
     case 'openpref':openSheet({type:'pref',k:d.k});return;
@@ -4764,7 +4866,7 @@ function act(a,d){
     case 'plquit':if(V.play){V.play.q=true;renderPlayer();}return;
     case 'plquitno':if(V.play){V.play.q=false;renderPlayer();}return;
     case 'plquityes':closePlay();render(true);return;
-    case 'pldone':{const dt=V.play.date;closePlay();V.date=dt;V.tab='workout';render();openSheet({type:'recap'});return;}
+    case 'pldone':{const dt=V.play.date;closePlay();V.date=dt;V.tab='workout';render();checkNewBadges();openSheet({type:'recap'});return;}
     case 'quickstart':{V.date=today();const w=ensureWorkout(V.date);w.prog=+d.i;TPL[+d.i].ex.forEach(id=>addEntry(w,id));save();V.tab='workout';render();return;}
     case 'doplan':{
       const w=getWorkout(V.date),en=w&&w.entries.find(e=>e.exId===d.ex);if(!en)return;
