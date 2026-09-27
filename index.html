@@ -1201,7 +1201,7 @@ function totalCoinsEarned(){
   const badges=badgeDefs().filter(b=>b.earned).length;
   return ws.length*20+meals*2+prCount*10+badges*50;
 }
-function coinsSpent(){return (S.unlocked||[]).reduce((a,k)=>a+((ACCENTS[k]&&ACCENTS[k].cost)||0),0);}
+function coinsSpent(){return (S.unlocked||[]).reduce((a,k)=>{const it=ACCENTS[k]||AVATARS[k]||TITLES[k];return a+((it&&it.cost)||0);},0);}
 function coinsBalance(){return totalCoinsEarned()-coinsSpent();}
 function accentAvailable(k){return (ACCENTS[k].cost||0)===0||((S.unlocked||[]).includes(k));}
 const AVATARS={
