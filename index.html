@@ -1033,14 +1033,15 @@ function accountCard(){
   </div>`;
 }
 function notifCard(){
-  if(!SYNC.user)return '';
   if(!('serviceWorker' in navigator)||!('PushManager' in window)||typeof Notification==='undefined')return '';
   const perm=Notification.permission;
   if(perm==='granted')return `<div class="card acc"><div class="acch"><span class="sic on">${icon('bell',22)}</span><div><h3>Notifications</h3><small>Activées sur cet appareil</small></div></div>
     <p class="sub" style="margin-top:10px">Tu recevras un rappel si tu n'as pas fait ta séance du jour, et une alerte quand tu atteins un objectif.</p>
+    ${!SYNC.user?`<p class="sub" style="margin-top:8px">Reconnecte-toi si tu veux changer cet appareil ou en ajouter un autre.</p>`:''}
     <button class="btn ghost block" style="margin-top:10px" data-act="notifoff">Désactiver sur cet appareil</button></div>`;
   if(perm==='denied')return `<div class="card acc"><div class="acch"><span class="sic">${icon('bell',22)}</span><div><h3>Notifications</h3><small>Bloquées par le navigateur</small></div></div>
     <p class="sub" style="margin-top:10px">Tu as refusé les notifications pour ce site. Pour les réactiver, autorise-les depuis les réglages du site dans ton navigateur (icône à côté de l'adresse).</p></div>`;
+  if(!SYNC.user)return `<div class="card acc"><div class="acch"><span class="sic">${icon('bell',22)}</span><div><h3>Notifications</h3><small>Connecte-toi pour les activer</small></div></div></div>`;
   return `<div class="card acc"><div class="acch"><span class="sic">${icon('bell',22)}</span><div><h3>Notifications</h3><small>Rappels de séance et alertes d'objectifs</small></div></div>
     <button class="btn primary block" style="margin-top:12px" data-act="notifon">${icon('bell',16)} Activer les notifications</button></div>`;
 }
@@ -1515,6 +1516,34 @@ function rebuildFoods(){
   FMAP={};FOODS.forEach(f=>{f._n=norm(f.n);FMAP[f.n]=f;});
 }
 rebuildFoods();
+/* ---- recherche de marques en ligne (OpenFoodFacts) ---- */
+let OFF_DEBOUNCE=null,OFF_TOKEN=0;
+function mergeOFF(items){FOODS=FOODS.filter(f=>!f._off).concat(items);}
+async function searchOFF(q){
+  const token=++OFF_TOKEN;
+  const st=$('#offstatus');if(st)st.textContent='Recherche des marques en ligne…';
+  try{
+    const url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&search_simple=1&action=process&json=1&page_size=24&lc=fr&fields=product_name,brands,nutriments';
+    const r=await fetch(url);
+    if(!r.ok)throw new Error('http '+r.status);
+    const j=await r.json();
+    if(token!==OFF_TOKEN)return;
+    const seen=new Set(),items=[];
+    for(const p of (j.products||[])){
+      const nu=p.nutriments||{},k=nu['energy-kcal_100g'];
+      const name=(p.product_name||'').trim();
+      if(k==null||isNaN(k)||!name)continue;
+      const brand=(p.brands||'').split(',')[0].trim(),n=name+(brand?' — '+brand:'');
+      if(seen.has(n))continue;seen.add(n);
+      items.push({n,cat:'Marques (en ligne)',k:+k||0,p:+nu['proteins_100g']||0,c:+nu['carbohydrates_100g']||0,f:+nu['fat_100g']||0,fi:+nu['fiber_100g']||0,t:'',u:null,_off:true,_n:norm(n)});
+    }
+    mergeOFF(items);
+    if(st)st.textContent=items.length?'':'Aucune marque trouvée en ligne pour cette recherche.';
+    if(V.sheet&&V.sheet.type==='food'&&V.sheet.mode==='search'&&V.sheet.sel==null){
+      const el=$('#flist');if(el)el.innerHTML=foodRows(V.sheet.q,V.sheet.cat);
+    }
+  }catch(e){if(token===OFF_TOKEN&&st)st.textContent='';/* hors-ligne ou bloqué : on garde juste les résultats locaux */}
+}
 const fiOf=m=>m.fi!==undefined?m.fi:((m.g>0&&FMAP[m.name])?FMAP[m.name].fi*m.g/100:0);
 
 const SLOTS=['Petit-déjeuner','Déjeuner','Collation','Dîner'];
@@ -2086,7 +2115,7 @@ function exRows(list){
   return list.length?list.map(e=>`<button class="lrow" data-act="pickex" data-id="${e.id}" ${inW(e.id)?'disabled':''}>${mico(e.m)}<span class="ln"><b>${esc(e.n)}</b><small>${e.m}</small></span>${inW(e.id)?icon('check',18):icon('plus',18)}</button>`).join(''):`<p class="empty">Aucun exercice trouvé.</p>`;
 }
 function foodUsage(){const c={};S.meals.forEach(m=>{c[m.name]=(c[m.name]||0)+1;});return c;}
-const foodCats=()=>['Tous'].concat(Object.values(FCAT),(S.customFoods||[]).length?['Mes aliments']:[]);
+const foodCats=()=>['Tous'].concat(Object.values(FCAT),(S.customFoods||[]).length?['Mes aliments']:[],FOODS.some(f=>f._off)?['Marques (en ligne)']:[]);
 function foodList(q,cat){
   const words=norm(q||'').split(/\s+/).filter(Boolean),use=foodUsage();
   const l=FOODS.map((f,i)=>({f,i})).filter(x=>dietOK(x.f.n)&&(!cat||cat==='Tous'||x.f.cat===cat)&&words.every(w=>x.f._n.includes(w)));
@@ -2099,7 +2128,7 @@ function foodList(q,cat){
 function foodRows(q,cat){
   const l=foodList(q,cat),max=60;
   if(!l.length)return `<p class="empty">Aucun aliment trouvé. Utilise la saisie manuelle pour l’ajouter.</p>`;
-  return l.slice(0,max).map(x=>`<button class="lrow" data-act="pickfood" data-i="${x.i}"><span class="sic" style="width:38px;height:38px">${icon('apple',18)}</span><span class="ln"><b>${esc(x.f.n)}</b><small>${r0(x.f.k)} kcal · P ${nf(x.f.p)} · G ${nf(x.f.c)} · L ${nf(x.f.f)} · 100 g</small></span>${icon('plus',18)}</button>`).join('')
+  return l.slice(0,max).map(x=>`<button class="lrow" data-act="pickfood" data-i="${x.i}"><span class="sic" style="width:38px;height:38px">${icon('apple',18)}</span><span class="ln"><b>${esc(x.f.n)}</b><small>${r0(x.f.k)} kcal · P ${nf(x.f.p)} · G ${nf(x.f.c)} · L ${nf(x.f.f)} · 100 g${x.f._off?' · en ligne':''}</small></span>${icon('plus',18)}</button>`).join('')
     +(l.length>max?`<p class="sub" style="text-align:center;padding:10px">${l.length-max} autres résultats : précise ta recherche.</p>`:'');
 }
 
@@ -2138,6 +2167,7 @@ function sheetHTML(){
     }else{
       const recent=habits(s.slot);
       body=seg+`<div class="search">${icon('search',18)}<input id="fq" placeholder="Rechercher un aliment" value="${esc(s.q||'')}" autocomplete="off"></div>
+      <p id="offstatus" class="sub" style="min-height:16px;margin:4px 0 0"></p>
       ${(!s.q&&recent.length)?`<p class="sub" style="margin-bottom:6px">Tes habitudes</p><div class="chips">${recent.map(m=>`<button class="chip" data-act="repeat" data-id="${m.id}">${esc(m.name)}${m.g?' '+r0(m.g)+' g':''}</button>`).join('')}</div>`:''}
       <div class="chips" style="margin:2px 0 6px">${foodCats().map(c=>`<button class="chip ${(s.cat||'Tous')===c?'on':''}" data-act="foodcat" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
       <p class="sub" style="margin:2px 0 0;font-size:12.5px">Valeurs pour 100 g de chaque aliment</p>
@@ -4318,7 +4348,7 @@ function act(a,d){
     case 'finish':V.rest=null;tick();openSheet({type:'recap'});return;
     case 'rest15':if(V.rest){V.rest.end+=15000;V.rest.total+=15000;tick();}return;
     case 'restskip':V.rest=null;tick();return;
-    case 'openfood':openSheet({type:'food',slot:d.slot,mode:'search',q:'',sel:null,g:100},'fq');return;
+    case 'openfood':OFF_TOKEN++;mergeOFF([]);openSheet({type:'food',slot:d.slot,mode:'search',q:'',sel:null,g:100},'fq');return;
     case 'foodmode':V.sheet.mode=d.m;V.sheet.sel=null;renderSheet();return;
     case 'pickfood':V.sheet.sel=+d.i;V.sheet.g=typicalG(FOODS[+d.i].n);renderSheet();return;
     case 'tech':openSheet({type:'tech',id:d.ex});return;
@@ -4589,7 +4619,13 @@ document.addEventListener('input',e=>{
   if(ds.pl&&V.play&&V.play.cur){const v=num(t.value);if(!isNaN(v))V.play.cur[ds.pl]=ds.pl==='reps'?Math.max(1,Math.round(v)):Math.max(0,v);}
   if(ds.onb)V.onbf[ds.onb]=t.value;
   if(t.id==='sq'){V.sheet.q=t.value;$('#slist').innerHTML=exRows(exList(t.value,V.sheet.m));}
-  if(t.id==='fq'){V.sheet.q=t.value;$('#flist').innerHTML=foodRows(t.value,V.sheet.cat);}
+  if(t.id==='fq'){
+    V.sheet.q=t.value;$('#flist').innerHTML=foodRows(t.value,V.sheet.cat);
+    clearTimeout(OFF_DEBOUNCE);
+    const q=t.value.trim();
+    if(q.length>=2){OFF_DEBOUNCE=setTimeout(()=>searchOFF(q),450);}
+    else{OFF_TOKEN++;mergeOFF([]);const st=$('#offstatus');if(st)st.textContent='';}
+  }
   if(t.id==='fg'){V.sheet.g=t.value;updateFoodPreview();}
   if(t.id==='saytxt'&&V.sheet)V.sheet.text=t.value;
   if(t.id==='genwish'&&V.sheet)V.sheet.wish=t.value;
