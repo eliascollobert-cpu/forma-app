@@ -816,11 +816,48 @@ function loadSB(){
      anti-tracking du navigateur (Edge Tracking Prevention, ITP, etc.) sur le stockage de session. */
   return Promise.resolve(!!(window.supabase&&window.supabase.createClient));
 }
+/* Stockage de session via IndexedDB plutôt que localStorage : sur iOS, une web app
+   ajoutée à l'écran d'accueil et fermée complètement (balayée dans le multitâche) peut
+   perdre des données localStorage écrites juste avant la fermeture — limite connue de
+   WebKit, pas garantie corrigée à 100%, mais IndexedDB s'est montré nettement plus fiable
+   dans ce cas précis. On retombe sur localStorage si IndexedDB est indisponible. */
+const idbAuthStorage=(()=>{
+  const DB='forma-auth-db',STORE='kv';
+  const hasIDB=typeof indexedDB!=='undefined';
+  const openDB=()=>new Promise((res,rej)=>{
+    const rq=indexedDB.open(DB,1);
+    rq.onupgradeneeded=()=>{if(!rq.result.objectStoreNames.contains(STORE))rq.result.createObjectStore(STORE);};
+    rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error);
+  });
+  if(!hasIDB)return undefined;
+  return{
+    async getItem(key){
+      try{const db=await openDB();return await new Promise((res)=>{
+        const tx=db.transaction(STORE,'readonly'),rq=tx.objectStore(STORE).get(key);
+        rq.onsuccess=()=>res(rq.result==null?null:rq.result);rq.onerror=()=>res(null);
+      });}catch(e){try{return localStorage.getItem(key);}catch(_){return null;}}
+    },
+    async setItem(key,value){
+      try{const db=await openDB();await new Promise((res)=>{
+        const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(value,key);
+        tx.oncomplete=res;tx.onerror=res;
+      });}catch(e){}
+      try{localStorage.setItem(key,value);}catch(_){}
+    },
+    async removeItem(key){
+      try{const db=await openDB();await new Promise((res)=>{
+        const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(key);
+        tx.oncomplete=res;tx.onerror=res;
+      });}catch(e){}
+      try{localStorage.removeItem(key);}catch(_){}
+    }
+  };
+})();
 async function syncInit(){
   const ok=await loadSB();
   SYNC.avail=ok;
   if(!ok){render(true);return;}
-  SYNC.sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'forma-auth'}});
+  SYNC.sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'forma-auth',storage:idbAuthStorage}});
   SYNC.sb.auth.onAuthStateChange((ev,session)=>{
     SYNC.user=session?session.user:null;
     if(ev==='PASSWORD_RECOVERY')setTimeout(()=>openSheet({type:'newpass',err:'',busy:false}),50);
