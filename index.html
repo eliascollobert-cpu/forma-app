@@ -711,6 +711,7 @@ const IC={
  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
  home:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
  dumbbell:'<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>',
+ bell:'<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5z"/><path d="M9.5 18a2.5 2.5 0 0 0 5 0"/>',
  utensils:'<path d="M6 3v8a2 2 0 0 0 2 2v8M10 3v8a2 2 0 0 1-2 2M6 3v5M17 21V3c-2 1.5-3 4-3 7 0 2 1 3 3 3"/>',
  chart:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
  spark:'<path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/>',
@@ -751,6 +752,46 @@ window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();DEFERRED_
 function isStandalone(){try{return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}catch(e){return false;}}
 function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent||'');}
 function isAndroid(){return /android/i.test(navigator.userAgent||'');}
+/* ---- notifications push ---- */
+const VAPID_PUBLIC_KEY='BJjxN96bEjX52R3_K3qZYUINDlAu6OlH1IU78TjZ8kZc7eQwcFxKSLcEOv8w3LUpNunHvXbID6IcSfIr1WLMPAo';
+function urlB64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(base64);const arr=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+  return arr;
+}
+async function registerSW(){
+  if(!('serviceWorker' in navigator))return null;
+  try{return await navigator.serviceWorker.register('/sw.js');}catch(e){return null;}
+}
+if('serviceWorker' in navigator)window.addEventListener('load',()=>{registerSW();});
+async function enableNotifications(){
+  try{
+    if(!SYNC.user){toast('Connecte-toi pour activer les notifications.');return;}
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){render();return;}
+    const reg=await registerSW();
+    if(!reg){toast("Notifications indisponibles sur cet appareil.");return;}
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToUint8Array(VAPID_PUBLIC_KEY)});
+    const j=sub.toJSON();
+    await SYNC.sb.from('push_subscriptions').upsert({user_id:SYNC.user.id,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth},{onConflict:'endpoint'});
+    toast('Notifications activées.');render();
+  }catch(e){toast("Impossible d'activer les notifications.");render();}
+}
+async function disableNotifications(){
+  try{
+    const reg=await navigator.serviceWorker.getRegistration();
+    if(reg){
+      const sub=await reg.pushManager.getSubscription();
+      if(sub){
+        try{await SYNC.sb.from('push_subscriptions').delete().eq('endpoint',sub.endpoint);}catch(e){}
+        await sub.unsubscribe();
+      }
+    }
+  }catch(e){}
+  toast('Notifications désactivées sur cet appareil.');render();
+}
 
 /* ================= données ================= */
 const KEY='forma-coach-v1';
@@ -953,6 +994,18 @@ function accountCard(){
     <button class="btn danger block" style="margin-top:10px" data-act="deleteaccount">${V.confirm==='delacc'?'Confirmer la suppression définitive':'Supprimer mon compte et mes données'}</button>
     ${V.confirm==='delacc'?`<p class="sub" style="margin-top:8px">Tes séances, repas, pesées et photos seront supprimés définitivement du compte et de cet appareil. Cette action est irréversible.</p>`:''}
   </div>`;
+}
+function notifCard(){
+  if(!SYNC.user)return '';
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||typeof Notification==='undefined')return '';
+  const perm=Notification.permission;
+  if(perm==='granted')return `<div class="card acc"><div class="acch"><span class="sic on">${icon('bell',22)}</span><div><h3>Notifications</h3><small>Activées sur cet appareil</small></div></div>
+    <p class="sub" style="margin-top:10px">Tu recevras un rappel si tu n'as pas fait ta séance du jour, et une alerte quand tu atteins un objectif.</p>
+    <button class="btn ghost block" style="margin-top:10px" data-act="notifoff">Désactiver sur cet appareil</button></div>`;
+  if(perm==='denied')return `<div class="card acc"><div class="acch"><span class="sic">${icon('bell',22)}</span><div><h3>Notifications</h3><small>Bloquées par le navigateur</small></div></div>
+    <p class="sub" style="margin-top:10px">Tu as refusé les notifications pour ce site. Pour les réactiver, autorise-les depuis les réglages du site dans ton navigateur (icône à côté de l'adresse).</p></div>`;
+  return `<div class="card acc"><div class="acch"><span class="sic">${icon('bell',22)}</span><div><h3>Notifications</h3><small>Rappels de séance et alertes d'objectifs</small></div></div>
+    <button class="btn primary block" style="margin-top:12px" data-act="notifon">${icon('bell',16)} Activer les notifications</button></div>`;
 }
 function startResendTick(s){
   if(s._tick)clearInterval(s._tick);
@@ -1971,6 +2024,7 @@ function viewCoach(){
     <button class="btn primary block" style="margin-top:16px" data-act="saveprofile">Enregistrer</button>
   </details>
   ${accountCard()}
+  ${notifCard()}
   <button class="btn ghost block" style="margin-top:10px" data-act="guideopen">${icon('info',16)} Revoir le guide de démarrage</button>
   <details class="card fold" data-fold="data" ${V.open.data?'open':''}><summary>Mes données</summary>
     <div style="height:12px"></div>
@@ -4291,6 +4345,8 @@ function act(a,d){
     case 'guidenext':{const s=V.sheet;if(!s)return;const n=guideSlides().length;if((s.step||0)>=n-1){S.guideSeen=true;save();V.sheet=null;render();return;}goGuideStep((s.step||0)+1);return;}
     case 'guideopen':goGuideStep(0);return;
     case 'guideskip':S.guideSeen=true;save();closeSheet();return;
+    case 'notifon':enableNotifications();return;
+    case 'notifoff':disableNotifications();return;
     case 'guideinstall':{if(DEFERRED_INSTALL){DEFERRED_INSTALL.prompt();DEFERRED_INSTALL.userChoice.finally(()=>{DEFERRED_INSTALL=null;});}return;}
     case 'authopen':openSheet({type:'auth',mode:d.m||'login',email:SYNC.user?SYNC.user.email:'',err:'',busy:false,unconfirmed:false,resendAt:0});return;
     case 'authmode':if(V.sheet){V.sheet.mode=d.m;V.sheet.err='';V.sheet.done=null;V.sheet.unconfirmed=false;V.sheet.resendAt=0;const e=$('#aem');if(e)V.sheet.email=e.value;renderSheet();}return;
