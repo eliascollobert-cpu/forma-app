@@ -3195,8 +3195,8 @@ function genLocal(slot,b,wish){
     ...FOODS.filter(f=>dietOK(f.n)&&words.some(w=>norm(f.n).includes(w))).map(f=>f.n),
     ...tagFoods.filter(n=>F(n)&&dietOK(n))
   ])]:[];
-  const fav=favFoods(10),shuf=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
-  const ord=l=>{const ok=l.filter(n=>F(n)&&dietOK(n)),w=ok.filter(n=>wishF.includes(n)),h=ok.filter(n=>!w.includes(n)&&fav.includes(n)),o=ok.filter(n=>!w.includes(n)&&!h.includes(n));return [...shuf(w),...shuf(h),...shuf(o)];};
+  const shuf=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+  const ord=l=>{const ok=l.filter(n=>F(n)&&dietOK(n)),w=ok.filter(n=>wishF.includes(n)),rest=ok.filter(n=>!w.includes(n));return [...shuf(w),...shuf(rest)];};
   const clampG=(n,g,st)=>Math.max(st,Math.min(MAXG[n]||400,Math.round(g/st)*st));
   const bf=slot==='Petit-déjeuner',main=slot==='Déjeuner'||slot==='Dîner';
   const P=ord(main?POOL.mainP:bf?POOL.bfP:POOL.snP),C=ord(main?POOL.mainC:bf?POOL.bfC:POOL.snC);
