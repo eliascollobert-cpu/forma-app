@@ -1508,7 +1508,40 @@ Boisson protéinée (prête à boire)|K|60|10|4|0.5|0|d|330:bouteille
 Créatine monohydrate|K|0|0|0|0|0||5:dose
 Lait de coco|A|180|1.8|3|18|0||
 Saucisse végétale|A|230|17|7|15|3||
-Nuggets végétaux|A|230|12|20|11|4|g|`;
+Nuggets végétaux|A|230|12|20|11|4|g|
+Tofu fumé|A|180|16|2|11|1|g|
+Falafels cuits|G|330|13|32|18|6|g|30:boulette
+Edamame cuits|G|121|11|9|5|4|g|
+Riz thaï cuit|C|130|2.5|28|0.3|0.5|g|
+Nouilles udon cuites|C|130|4|27|0.2|1|g|
+Tortilla de blé|B|290|8|50|6|3|g|60:tortilla
+Maïs doux cuit|Z|86|3|19|1|2|g|
+Carotte râpée crue|Z|35|1|7|0.2|2.5|g|
+Poivron grillé|Z|33|1|6.5|0.3|2|g|
+Tomates cerises crues|Z|18|1|3.5|0.2|1.2|g|
+Concombre cru|Z|12|0.6|2|0.1|0.5|g|
+Champignons poêlés|Z|55|3|2|4|1.5|g|
+Oignon revenu|Z|70|1.2|8|3|1.5|g|
+Vinaigrette au sésame|X|450|2|6|46|1|g|15:c. à soupe
+Tahini|X|595|17|21|54|9|g|15:c. à soupe
+Fromage blanc aux fruits|L|95|6|14|1.5|0|d|100:pot
+Pomme de terre au four|C|93|2|21|0.1|2|g|
+Poulpe cuit|Q|110|16|3|2|0|f|
+Riz sauvage cuit|C|100|4|21|0.3|1.8|g|
+Orge perlé cuit|C|120|2.3|28|0.4|3|g|
+Pain naan|B|310|9|50|8|2|g|90:naan
+Épeautre cuit|C|127|5|26|0.9|4|g|
+Fenouil cuit|Z|20|1|4|0.2|2|g|
+Radis cru|Z|16|0.7|3.4|0.1|1.6|g|
+Céleri branche cru|Z|14|0.7|3|0.2|1.6|g|
+Endive braisée|Z|25|1.2|4|0.5|2|g|
+Huile de sésame|M|880|0|0|100|0|g|10:c. à soupe
+Compote sans sucre ajouté|F|55|0.3|13|0.1|1.5|g|100:pot
+Figues fraîches|F|74|0.8|19|0.3|2.5|g|50:figue
+Pudding de chia|S|140|4|12|8|8|g|150:pot
+Halloumi|L|320|25|2|25|0|d|30:tranche
+Boulettes de viande cuites|V|215|18|5|14|0|m|20:boulette
+Chorizo|V|455|24|2|38|0|m,p|8:tranche`;
 const BASEFOODS=FOOD_TXT.trim().split('\n').map(l=>{const a=l.split('|'),u=a[8]?a[8].split(':'):null;return {n:a[0],cat:FCAT[a[1]],k:+a[2],p:+a[3],c:+a[4],f:+a[5],fi:+a[6],t:a[7]||'',u:u?[+u[0],u[1].replace(/\*$/,''),/\*$/.test(u[1])]:null};});
 let FOODS=BASEFOODS,FMAP={};
 function rebuildFoods(){
@@ -3112,15 +3145,42 @@ function nextMealCard(d){
 
 /* ---- générateur local (sans IA) : régime, habitudes et envie pris en compte ---- */
 const POOL={
-  mainP:['Blanc de poulet cuit','Cuisse de poulet cuite (sans peau)','Dinde (blanc) cuit','Escalope de dinde poêlée','Bœuf haché 5 %','Steak de bœuf (rumsteck) grillé','Filet de porc cuit','Veau (escalope) poêlé','Saumon','Cabillaud cuit','Colin cuit','Dorade cuite','Truite cuite','Thon au naturel','Crevettes cuites','Tofu ferme','Tempeh','Steak végétal (soja)','Seitan','Œuf entier','Lentilles cuites','Pois chiches cuits','Haricots rouges cuits'],
-  mainC:['Riz cuit','Riz basmati cuit','Riz complet cuit','Pâtes cuites','Pâtes complètes cuites','Semoule cuite','Boulgour cuit','Couscous cuit','Quinoa cuit','Patate douce cuite','Pomme de terre cuite','Gnocchis cuits','Pain complet'],
-  veg:['Brocoli cuit','Haricots verts cuits','Courgette cuite','Épinards cuits','Chou-fleur cuit','Carotte cuite','Poivron rouge cru','Tomate crue'],
-  fat:['Huile d’olive','Avocat','Amandes','Beurre de cacahuète'],
-  bfP:['Skyr','Fromage blanc 0 %','Yaourt grec','Yaourt grec 0 %','Cottage cheese','Œuf entier','Boisson au soja','Tofu ferme'],
-  bfC:['Flocons d’avoine','Pain complet','Muesli (sans sucre ajouté)','Banane','Pomme','Kiwi'],
-  snP:['Skyr','Whey (poudre)','Protéine végétale (poudre)','Fromage blanc 0 %','Yaourt grec','Yaourt grec 0 %','Houmous'],
-  snC:['Banane','Pomme','Poire','Flocons d’avoine','Galette de riz','Datte Medjool','Raisins secs'],
-  snF:['Amandes','Noix','Beurre de cacahuète','Noix de cajou']
+  mainP:['Blanc de poulet cuit','Cuisse de poulet cuite (sans peau)','Dinde (blanc) cuit','Escalope de dinde poêlée','Bœuf haché 5 %','Steak de bœuf (rumsteck) grillé','Filet de porc cuit','Veau (escalope) poêlé','Boulettes de viande cuites','Chorizo','Saumon','Saumon fumé','Cabillaud cuit','Colin cuit','Dorade cuite','Truite cuite','Thon au naturel','Sardines à l’huile (égouttées)','Maquereau cuit','Crevettes cuites','Moules cuites','Calamars cuits','Poulpe cuit','Tofu ferme','Tofu fumé','Tempeh','Steak végétal (soja)','Seitan','Falafels cuits','Halloumi','Œuf entier','Blanc d’œuf','Lentilles cuites','Pois chiches cuits','Haricots rouges cuits','Haricots blancs cuits','Haricots noirs cuits','Flageolets cuits','Edamame cuits'],
+  mainC:['Riz cuit','Riz basmati cuit','Riz complet cuit','Riz thaï cuit','Riz sauvage cuit','Nouilles de riz cuites','Nouilles udon cuites','Pâtes cuites','Pâtes complètes cuites','Semoule cuite','Boulgour cuit','Couscous cuit','Quinoa cuit','Épeautre cuit','Orge perlé cuit','Patate douce cuite','Pomme de terre cuite','Pomme de terre au four','Gnocchis cuits','Pain complet','Pain pita','Pain naan','Tortilla de blé','Maïs doux cuit','Polenta cuite'],
+  veg:['Brocoli cuit','Haricots verts cuits','Courgette cuite','Épinards cuits','Chou-fleur cuit','Carotte cuite','Carotte râpée crue','Poivron rouge cru','Poivron grillé','Tomate crue','Tomates cerises crues','Concombre cru','Salade verte','Roquette','Champignons poêlés','Aubergine cuite','Chou rouge cru','Petits pois cuits','Oignon revenu','Asperges cuites','Betterave cuite','Poireau cuit','Fenouil cuit','Radis cru','Céleri branche cru','Endive braisée'],
+  fat:['Huile d’olive','Huile de coco','Huile de sésame','Avocat','Amandes','Beurre de cacahuète','Parmesan','Feta','Mozzarella','Halloumi','Crème fraîche légère 15 %','Sauce soja','Vinaigrette au sésame','Graines de sésame','Tahini','Pesto','Guacamole'],
+  bfP:['Skyr','Fromage blanc 0 %','Yaourt grec','Yaourt grec 0 %','Cottage cheese','Ricotta','Œuf entier','Boisson au soja','Tofu ferme','Fromage blanc aux fruits'],
+  bfC:['Flocons d’avoine','Pain complet','Pain aux céréales','Muesli (sans sucre ajouté)','Granola','Pudding de chia','Banane','Pomme','Kiwi','Myrtilles','Fraises','Framboises','Figues fraîches','Compote sans sucre ajouté','Pain d’épices','Crêpe nature'],
+  snP:['Skyr','Whey (poudre)','Protéine végétale (poudre)','Fromage blanc 0 %','Yaourt grec','Yaourt grec 0 %','Houmous','Œuf dur','Edamame cuits'],
+  snC:['Banane','Pomme','Poire','Orange','Clémentine','Mangue','Ananas','Pêche','Abricots secs','Flocons d’avoine','Galette de riz','Datte Medjool','Raisins secs'],
+  snF:['Amandes','Noix','Noisettes','Beurre de cacahuète','Noix de cajou','Pistaches','Graines de courge','Graines de tournesol','Chocolat noir 70 %']
+};
+/* Combinaisons thématiques utilisées pour mieux répondre à une envie précise
+   (ex : "mexicain", "italien", "asiatique", "rapide", "sans cuisson"). Chaque
+   tag ajoute un bonus de priorité aux aliments correspondants plutôt que de
+   forcer un plat figé, pour garder des combinaisons variées et réalistes. */
+const WISH_TAGS={
+  mexicain:['Haricots rouges cuits','Riz cuit','Maïs doux cuit','Avocat','Poivron rouge cru','Tortilla de blé','Bœuf haché 5 %','Poivron grillé','Guacamole'],
+  tex:['Haricots rouges cuits','Riz cuit','Maïs doux cuit','Avocat','Tortilla de blé','Guacamole'],
+  italien:['Pâtes cuites','Pâtes complètes cuites','Tomate crue','Tomates cerises crues','Parmesan','Mozzarella','Huile d’olive','Thon au naturel','Pesto'],
+  pates:['Pâtes cuites','Pâtes complètes cuites','Parmesan','Tomates cerises crues','Pesto'],
+  asiatique:['Riz cuit','Riz thaï cuit','Nouilles de riz cuites','Nouilles udon cuites','Tofu ferme','Tofu fumé','Edamame cuits','Sauce soja','Graines de sésame','Crevettes cuites','Carotte râpée crue','Huile de sésame'],
+  thai:['Riz thaï cuit','Nouilles de riz cuites','Crevettes cuites','Blanc de poulet cuit','Carotte râpée crue','Huile de sésame','Cabillaud cuit'],
+  japonais:['Riz cuit','Saumon','Thon au naturel','Edamame cuits','Sauce soja','Concombre cru'],
+  coreen:['Riz cuit','Tofu ferme','Épinards cuits','Carotte râpée crue','Chou rouge cru','Œuf entier','Sauce soja'],
+  grec:['Yaourt grec','Feta','Concombre cru','Tomate crue','Huile d’olive','Blanc de poulet cuit'],
+  libanais:['Pois chiches cuits','Houmous','Tahini','Pain pita','Tomate crue','Concombre cru'],
+  mediterraneen:['Huile d’olive','Tomate crue','Feta','Poivron rouge cru','Pois chiches cuits','Thon au naturel'],
+  oriental:['Semoule cuite','Couscous cuit','Pois chiches cuits','Carotte cuite','Blanc de poulet cuit'],
+  indien:['Riz cuit','Lentilles cuites','Pois chiches cuits','Épinards cuits','Yaourt grec'],
+  brunch:['Œuf entier','Avocat','Pain complet','Fromage blanc aux fruits','Granola','Myrtilles','Pain aux céréales'],
+  barbecue:['Bœuf haché 5 %','Steak de bœuf (rumsteck) grillé','Maïs doux cuit','Poivron grillé','Pomme de terre au four'],
+  rapide:['Thon au naturel','Sardines à l’huile (égouttées)','Skyr','Yaourt grec','Fromage blanc 0 %','Houmous','Œuf dur','Riz cuit'],
+  'sans cuisson':['Thon au naturel','Sardines à l’huile (égouttées)','Skyr','Yaourt grec','Fromage blanc 0 %','Houmous','Tomate crue','Concombre cru','Avocat','Pain complet'],
+  leger:['Blanc de poulet cuit','Cabillaud cuit','Colin cuit','Salade verte','Courgette cuite','Épinards cuits','Concombre cru'],
+  reconfort:['Pâtes cuites','Pomme de terre au four','Gnocchis cuits','Bœuf haché 5 %','Crème fraîche légère 15 %','Parmesan'],
+  sucre:['Flocons d’avoine','Banane','Fromage blanc aux fruits','Myrtilles','Fraises','Pain d’épices','Datte Medjool'],
+  sale:['Blanc de poulet cuit','Œuf entier','Feta','Houmous','Thon au naturel']
 };
 const MAXG={'Whey (poudre)':40,'Protéine végétale (poudre)':40,'Huile d’olive':20,'Amandes':40,'Beurre de cacahuète':30,'Avocat':100,'Houmous':80,'Œuf entier':240,'Flocons d’avoine':120,'Pain complet':120,'Banane':200,'Pomme':200,'Seitan':150,'Brocoli cuit':250,'Boisson au soja':300,'Skyr':350,'Yaourt grec':300,'Fromage blanc 0 %':350,'Yaourt grec 0 %':300,'Cottage cheese':250,'Raisins secs':40,'Datte Medjool':72,'Galette de riz':40,'Muesli (sans sucre ajouté)':100,'Kiwi':150,'Poire':200,'Noix':40,'Noix de cajou':40,'Tempeh':200,'Steak végétal (soja)':200,'Gnocchis cuits':350,'Pain complet':120};
 const shortN=n=>n.replace(/ \(.*?\)/,'').replace(/ (cuit|cuite|cru|crue|grillé|grillée|poêlé|poêlée|rôti|rôtie)s?$/,'').replace(/ 5 %$/,'').replace(/^Blanc de /,'').replace(/^Œuf entier$/,'Œufs');
@@ -3129,8 +3189,12 @@ function genLocal(slot,b,wish){
   if(b.kcal>=120)b={kcal:b.kcal,p:Math.max(b.p,b.kcal*0.2/4),c:b.c,f:b.f};
   if(b.kcal<120)return {opts:[],empty:'Tu as déjà atteint ta cible pour ce repas. Garde une petite collation protéinée (skyr, whey) si tu as encore faim.'};
   const F=n=>FMAP[n],mk=(n,g)=>{const f=F(n),k=g/100;return {name:n,g,kcal:f.k*k,p:f.p*k,c:f.c*k,f:f.f*k};};
-  const words=norm(wish||'').split(/[^a-z0-9]+/).filter(w=>w.length>3);
-  const wishF=words.length?FOODS.filter(f=>dietOK(f.n)&&words.some(w=>norm(f.n).includes(w))).map(f=>f.n):[];
+  const wn=norm(wish||''),words=wn.split(/[^a-z0-9]+/).filter(w=>w.length>3);
+  const tagFoods=Object.keys(WISH_TAGS).filter(tag=>wn.includes(norm(tag))).flatMap(tag=>WISH_TAGS[tag]);
+  const wishF=(words.length||tagFoods.length)?[...new Set([
+    ...FOODS.filter(f=>dietOK(f.n)&&words.some(w=>norm(f.n).includes(w))).map(f=>f.n),
+    ...tagFoods.filter(n=>F(n)&&dietOK(n))
+  ])]:[];
   const fav=favFoods(10),shuf=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
   const ord=l=>{const ok=l.filter(n=>F(n)&&dietOK(n)),w=ok.filter(n=>wishF.includes(n)),h=ok.filter(n=>!w.includes(n)&&fav.includes(n)),o=ok.filter(n=>!w.includes(n)&&!h.includes(n));return [...shuf(w),...shuf(h),...shuf(o)];};
   const clampG=(n,g,st)=>Math.max(st,Math.min(MAXG[n]||400,Math.round(g/st)*st));
@@ -3138,10 +3202,9 @@ function genLocal(slot,b,wish){
   const P=ord(main?POOL.mainP:bf?POOL.bfP:POOL.snP),C=ord(main?POOL.mainC:bf?POOL.bfC:POOL.snC);
   const Vg=ord(POOL.veg),Fa=ord(main?POOL.fat:POOL.snF),Fr=ord(['Banane','Pomme']);
   if(!P.length)return {opts:[],empty:'Aucun aliment compatible avec ton alimentation. Utilise la saisie manuelle.'};
-  const wP=P.find(n=>wishF.includes(n)),wC=C.find(n=>wishF.includes(n));
   const opts=[],seen={};
-  for(let i=0;i<6&&opts.length<3;i++){
-    const pn=wP||P[i%P.length],cn=C.length?(wC||C[i%C.length]):null,items=[];
+  for(let i=0;i<12&&opts.length<5;i++){
+    const pn=P[i%P.length],cn=C.length?C[i%C.length]:null,items=[];
     items.push(mk(pn,clampG(pn,b.p*0.7/(F(pn).p/100),10)));
     if(main&&Vg.length)items.push(mk(Vg[i%Vg.length],b.kcal>500?150:100));
     if(bf&&cn&&!Fr.includes(cn)&&Fr.length)items.push(mk(Fr[0],100));
