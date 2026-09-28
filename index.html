@@ -2361,61 +2361,88 @@ function viewCoach(){
   ${friendsSectionHTML()}`;
 }
 
+const sortByCost=cat=>Object.keys(cat).sort((a,b)=>(cat[a].cost||0)-(cat[b].cost||0));
 function viewShop(){
   const earned=totalCoinsEarned(),spent=coinsSpent(),bal=earned-spent;
   const tab=V.shopTab||'accent';
   const TABS_SHOP=[['accent','Couleurs'],['avatar','Avatars'],['title','Titres'],['fx','Effets'],['power','Bonus']];
+  const pv=V.shopPreview||{};
+  const cur=(field,fallback)=>pv[field]!==undefined?pv[field]:fallback;
+  const previewing=(field,fallback)=>pv[field]!==undefined&&pv[field]!==fallback;
   const lockB=av=>av?'':`<i class="lockbadge">${icon('lock',10)}</i>`;
-  const swGrid=(cat,curKey,setAct,glyphOf)=>`<div class="accentgrid">${Object.keys(cat).map(k=>{
-    const av=isUnlocked(cat,k),cur=curKey===k;
-    return `<button class="avatarsw ${cur?'on':''} ${av?'':'locked'}" data-act="${av?setAct:'buyitem'}" data-cat="${setAct==='setavatar'?'avatar':setAct==='setframe'?'frame':setAct==='setstatus'?'status':'accent'}" data-k="${k}" aria-label="${cat[k].name||cat[k].glyph||k}${av?'':' — '+cat[k].cost+' jetons'}">${glyphOf(k)}${lockB(av)}</button>`;
+  const swAct=(field,av,setAct)=>av?setAct:'previewitem';
+  const swGrid=(cat,field,fallbackKey,setAct,glyphOf)=>`<div class="accentgrid">${sortByCost(cat).map(k=>{
+    const av=isUnlocked(cat,k),curK=cur(field,fallbackKey)===k;
+    return `<button class="avatarsw ${curK?'on':''} ${av?'':'locked'}" data-act="${swAct(field,av,setAct)}" data-field="${field}" data-cat="${field==='avatar'?'avatar':field==='frame'?'frame':field==='statusEmoji'?'status':'accent'}" data-k="${k}" aria-label="${cat[k].name||cat[k].glyph||k}${av?'':' — '+cat[k].cost+' jetons'}">${glyphOf(k)}${lockB(av)}</button>`;
   }).join('')}</div>`;
   let grid;
   if(tab==='power'){
     const boostOn=boostActive();
-    grid=`<div class="prow" style="cursor:default"><span class="sic" style="width:38px;height:38px">❄️</span><span class="ln"><b>Gel de série</b><small>${S.freezesAvailable||0} en stock · protège ton streak un jour manqué</small></span><button class="btn sm primary" data-act="buyitem" data-cat="freeze" data-k="freeze">${FREEZE_COST} ${icon('flame',14)}</button></div>
-    <div class="prow" style="cursor:default"><span class="sic" style="width:38px;height:38px">⚡</span><span class="ln"><b>Boost x2 jetons (24h)</b><small>${boostOn?'Actif jusqu’à '+new Date(S.profile.boostUntil).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'Double les gains de badges, défis et connexion'}</small></span><button class="btn sm primary" data-act="buyitem" data-cat="boost" data-k="boost">${BOOST_COST} ${icon('flame',14)}</button></div>`;
+    grid=`<div class="prow" style="cursor:default"><span class="sic" style="width:38px;height:38px">❄️</span><span class="ln"><b>Gel de série</b><small>${S.freezesAvailable||0} en stock · protège ton streak un jour manqué</small></span><button class="btn sm primary" data-act="buyitem" data-cat="freeze" data-k="freeze">${V.isAdmin?'Gratuit':FREEZE_COST+' '+icon('flame',14)}</button></div>
+    <div class="prow" style="cursor:default"><span class="sic" style="width:38px;height:38px">⚡</span><span class="ln"><b>Boost x2 jetons (24h)</b><small>${boostOn?'Actif jusqu’à '+new Date(S.profile.boostUntil).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'Double les gains de badges, défis et connexion'}</small></span><button class="btn sm primary" data-act="buyitem" data-cat="boost" data-k="boost">${V.isAdmin?'Gratuit':BOOST_COST+' '+icon('flame',14)}</button></div>`;
   }else if(tab==='fx'){
     const FXICON={classic:'⏹️',confetti:'🎉',fireworks:'🎆',sparkle:'✨'};
-    grid=`<p class="sub" style="margin-bottom:8px">Écran de fin de séance</p><div class="perslist">${Object.keys(CELEBRATIONS).map(k=>{
-      const av=isUnlocked(CELEBRATIONS,k),cur=S.profile.celebration===k,c=CELEBRATIONS[k];
-      return `<button class="persrow" data-act="${av?'setcelebration':'buyitem'}" data-cat="celeb" data-k="${k}"><span style="font-size:20px;width:28px;text-align:center;${av?'':'opacity:.4'}">${FXICON[k]||''}</span><span class="prt"><b>${esc(c.name)}</b><small>${av?(cur?'Sélectionné':'Disponible'):c.cost+' jetons'}</small></span>${cur?icon('check',18):av?icon('right',18):icon('lock',16)}</button>`;
+    grid=`<p class="sub" style="margin-bottom:8px">Écran de fin de séance · tape pour essayer</p><div class="perslist">${sortByCost(CELEBRATIONS).map(k=>{
+      const av=isUnlocked(CELEBRATIONS,k),curK=cur('celebration',S.profile.celebration)===k,c=CELEBRATIONS[k];
+      return `<button class="persrow" data-act="${av?'setcelebration':'previewitem'}" data-field="celebration" data-cat="celeb" data-k="${k}"><span style="font-size:20px;width:28px;text-align:center;${av?'':'opacity:.4'}">${FXICON[k]||''}</span><span class="prt"><b>${esc(c.name)}</b><small>${av?(curK?'Sélectionné':'Disponible'):c.cost+' jetons'}</small></span>${curK?icon('check',18):av?icon('right',18):icon('lock',16)}</button>`;
     }).join('')}</div>`;
   }else if(tab==='accent'){
-    grid=`<div class="accentgrid">${Object.keys(ACCENTS).map(k=>{
-      const av=isUnlocked(ACCENTS,k),cur=S.profile.accent===k;
-      return `<button class="accentsw ${cur?'on':''} ${av?'':'locked'}" data-act="${av?'setaccent':'buyitem'}" data-cat="accent" data-k="${k}" aria-label="${ACCENTS[k].name}${av?'':' — '+ACCENTS[k].cost+' jetons'}" style="background:${ACCENTS[k].grad}">${cur?icon('check',18):(ACCENTS[k].anim?'✨':'')}${lockB(av)}</button>`;
+    grid=`<div class="accentgrid">${sortByCost(ACCENTS).map(k=>{
+      const av=isUnlocked(ACCENTS,k),curK=cur('accent',S.profile.accent)===k;
+      return `<button class="accentsw ${curK?'on':''} ${av?'':'locked'}" data-act="${av?'setaccent':'previewitem'}" data-field="accent" data-cat="accent" data-k="${k}" aria-label="${ACCENTS[k].name}${av?'':' — '+ACCENTS[k].cost+' jetons'}" style="background:${ACCENTS[k].grad}">${curK?icon('check',18):(ACCENTS[k].anim?'✨':'')}${lockB(av)}</button>`;
     }).join('')}</div>
-    <div class="shoplabels">${Object.keys(ACCENTS).map(k=>`<span>${esc(ACCENTS[k].name)}${ACCENTS[k].cost?' · '+ACCENTS[k].cost:''}</span>`).join('')}</div>`;
+    <div class="shoplabels">${sortByCost(ACCENTS).map(k=>`<span>${esc(ACCENTS[k].name)}${ACCENTS[k].cost?' · '+ACCENTS[k].cost:''}</span>`).join('')}</div>`;
   }else if(tab==='avatar'){
-    grid=`<div class="accentgrid">${Object.keys(AVATARS).map(k=>{
-      const av=isUnlocked(AVATARS,k),cur=(S.profile.avatar||'letter')===k,a=AVATARS[k];
-      return `<button class="avatarsw ${cur?'on':''} ${av?'':'locked'}" data-act="${av?'setavatar':'buyitem'}" data-cat="avatar" data-k="${k}" aria-label="${a.glyph||'Initiale'}${av?'':' — '+a.cost+' jetons'}">${a.glyph||esc((S.profile.name||'F').charAt(0).toUpperCase())}${lockB(av)}</button>`;
+    grid=`<div class="accentgrid">${sortByCost(AVATARS).map(k=>{
+      const av=isUnlocked(AVATARS,k),curK=cur('avatar',S.profile.avatar||'letter')===k,a=AVATARS[k];
+      return `<button class="avatarsw ${curK?'on':''} ${av?'':'locked'}" data-act="${av?'setavatar':'previewitem'}" data-field="avatar" data-cat="avatar" data-k="${k}" aria-label="${a.glyph||'Initiale'}${av?'':' — '+a.cost+' jetons'}">${a.glyph||esc((S.profile.name||'F').charAt(0).toUpperCase())}${lockB(av)}</button>`;
     }).join('')}</div>
-    <div class="shoplabels">${Object.keys(AVATARS).map(k=>`<span>${AVATARS[k].cost||'Gratuit'}${AVATARS[k].cost?' jetons':''}</span>`).join('')}</div>
+    <div class="shoplabels">${sortByCost(AVATARS).map(k=>`<span>${AVATARS[k].cost||'Gratuit'}${AVATARS[k].cost?' jetons':''}</span>`).join('')}</div>
     <p class="sub" style="margin:18px 0 8px">Cadre d’avatar</p>
-    ${swGrid(FRAMES,S.profile.frame||'fr_none','setframe',k=>`<span class="framepreview${k==='fr_none'?'':' frame-'+k.slice(3)}">${avatarGlyph()}</span>`)}
-    <div class="shoplabels">${Object.keys(FRAMES).map(k=>`<span>${FRAMES[k].cost||'Gratuit'}${FRAMES[k].cost?' jetons':''}</span>`).join('')}</div>
+    ${swGrid(FRAMES,'frame',S.profile.frame||'fr_none','setframe',k=>`<span class="framepreview${k==='fr_none'?'':' frame-'+k.slice(3)}">${avatarGlyph()}</span>`)}
+    <div class="shoplabels">${sortByCost(FRAMES).map(k=>`<span>${FRAMES[k].cost||'Gratuit'}${FRAMES[k].cost?' jetons':''}</span>`).join('')}</div>
     <p class="sub" style="margin:18px 0 8px">Emoji de statut</p>
-    ${swGrid(STATUSES,S.profile.statusEmoji||'st_none','setstatus',k=>STATUSES[k].glyph||icon('check',16))}
-    <div class="shoplabels">${Object.keys(STATUSES).map(k=>`<span>${STATUSES[k].cost||'Gratuit'}${STATUSES[k].cost?' jetons':''}</span>`).join('')}</div>`;
+    ${swGrid(STATUSES,'statusEmoji',S.profile.statusEmoji||'st_none','setstatus',k=>STATUSES[k].glyph||icon('check',16))}
+    <div class="shoplabels">${sortByCost(STATUSES).map(k=>`<span>${STATUSES[k].cost||'Gratuit'}${STATUSES[k].cost?' jetons':''}</span>`).join('')}</div>`;
   }else{
-    grid=`<div class="perslist">${Object.keys(TITLES).filter(k=>k!=='none').map(k=>{
-      const av=isUnlocked(TITLES,k),cur=S.profile.title===k,t=TITLES[k];
-      return `<button class="persrow" data-act="${av?'settitle':'buyitem'}" data-cat="title" data-k="${k}"><span class="prt"><b>${esc(t.label)}</b><small>${av?(cur?'Sélectionné':'Disponible'):t.cost+' jetons'}</small></span>${cur?icon('check',18):av?icon('right',18):icon('lock',16)}</button>`;
+    grid=`<div class="perslist">${sortByCost(TITLES).filter(k=>k!=='none').map(k=>{
+      const av=isUnlocked(TITLES,k),curK=cur('title',S.profile.title)===k,t=TITLES[k];
+      return `<button class="persrow" data-act="${av?'settitle':'previewitem'}" data-field="title" data-cat="title" data-k="${k}"><span class="prt"><b>${esc(t.label)}</b><small>${av?(curK?'Sélectionné':'Disponible'):t.cost+' jetons'}</small></span>${curK?icon('check',18):av?icon('right',18):icon('lock',16)}</button>`;
     }).join('')}</div>
     <p class="sub" style="margin:18px 0 4px">Texte du bouton principal</p>
-    <div class="perslist">${Object.keys(CTAS).map(k=>{
-      const av=isUnlocked(CTAS,k),cur=(S.profile.cta||'cta_default')===k,c=CTAS[k];
-      return `<button class="persrow" data-act="${av?'setcta':'buyitem'}" data-cat="cta" data-k="${k}"><span class="prt"><b>${esc(c.text)}</b><small>${av?(cur?'Sélectionné':'Disponible'):c.cost+' jetons'}</small></span>${cur?icon('check',18):av?icon('right',18):icon('lock',16)}</button>`;
+    <div class="perslist">${sortByCost(CTAS).map(k=>{
+      const av=isUnlocked(CTAS,k),curK=cur('cta',S.profile.cta||'cta_default')===k,c=CTAS[k];
+      return `<button class="persrow" data-act="${av?'setcta':'previewitem'}" data-field="cta" data-cat="cta" data-k="${k}"><span class="prt"><b>${esc(c.text)}</b><small>${av?(curK?'Sélectionné':'Disponible'):c.cost+' jetons'}</small></span>${curK?icon('check',18):av?icon('right',18):icon('lock',16)}</button>`;
     }).join('')}</div>`;
   }
   const modes=[['auto','Automatique'],['light','Clair'],['dark','Sombre']];
+  const pAvatarKey=cur('avatar',S.profile.avatar||'letter'),pFrameKey=cur('frame',S.profile.frame||'fr_none'),pStatusKey=cur('statusEmoji',S.profile.statusEmoji||'st_none'),pTitleKey=cur('title',S.profile.title),pCtaKey=cur('cta',S.profile.cta||'cta_default'),pAccentKey=cur('accent',S.profile.accent);
+  const pAvGlyph=(AVATARS[pAvatarKey]||{}).glyph||esc((S.profile.name||'F').charAt(0).toUpperCase());
+  const previewOwned=['avatar','frame','statusEmoji','title','cta','accent','celebration'].every(f=>{
+    const cats={avatar:AVATARS,frame:FRAMES,statusEmoji:STATUSES,title:TITLES,cta:CTAS,accent:ACCENTS,celebration:CELEBRATIONS};
+    const fb={avatar:S.profile.avatar||'letter',frame:S.profile.frame||'fr_none',statusEmoji:S.profile.statusEmoji||'st_none',title:S.profile.title,cta:S.profile.cta||'cta_default',accent:S.profile.accent,celebration:S.profile.celebration};
+    return isUnlocked(cats[f],cur(f,fb[f]));
+  });
+  const lockedPreviews=(()=>{
+    const cats={avatar:AVATARS,frame:FRAMES,statusEmoji:STATUSES,title:TITLES,cta:CTAS,accent:ACCENTS,celebration:CELEBRATIONS};
+    const cat2act={avatar:'avatar',frame:'frame',statusEmoji:'status',title:'title',cta:'cta',accent:'accent',celebration:'celeb'};
+    return Object.keys(pv).filter(f=>cats[f]&&pv[f]&&!isUnlocked(cats[f],pv[f])).map(f=>({field:f,k:pv[f],cat:cat2act[f],name:cats[f][pv[f]].name||cats[f][pv[f]].label||cats[f][pv[f]].text||pv[f],cost:cats[f][pv[f]].cost}));
+  })();
+  const anyPreview=Object.keys(pv).length>0;
   return `
   <div class="top"><div><h1>Boutique</h1><p class="sub">Personnalise ton profil</p></div></div>
+  ${V.shopBurstFlag?`<div class="confetti-burst">${Array.from({length:22},()=>{const l=Math.random()*100,c=['var(--accent)','var(--prot)','var(--gold)','var(--good)'][Math.floor(Math.random()*4)];return `<i style="left:${l}%;background:${c};animation-delay:${(Math.random()*.3).toFixed(2)}s;animation-duration:${(1.4+Math.random()*.8).toFixed(2)}s;transform:rotate(${Math.floor(Math.random()*360)}deg)"></i>`;}).join('')}</div>`:''}
+  <div class="card" style="text-align:center;padding:20px">
+    <div class="avatar${pFrameKey!=='fr_none'?' frame-'+pFrameKey.slice(3):''}" style="width:56px;height:56px;font-size:22px;border-radius:16px;margin:0 auto 10px">${pAvGlyph}</div>
+    <h3 style="font-size:17px">${S.profile.name?esc(S.profile.name):'Mon profil'}${pStatusKey!=='st_none'?' '+(STATUSES[pStatusKey]||{}).glyph:''}</h3>
+    ${pTitleKey&&pTitleKey!=='none'&&TITLES[pTitleKey]?`<p class="sub" style="margin-top:2px">${esc(TITLES[pTitleKey].label)}</p>`:''}
+    <div class="seg" style="margin:12px auto 0;max-width:220px" role="group" aria-label="Aperçu couleur"><button class="on" style="background:${(ACCENTS[pAccentKey]||{}).grad};color:#fff;border:0">${esc((ACCENTS[pAccentKey]||{}).name||'')}</button></div>
+    <p class="sub" style="margin-top:10px;font-style:italic">« ${esc((CTAS[pCtaKey]||{}).text||'')} »</p>
+    ${anyPreview?`${lockedPreviews.map(lp=>`<button class="btn sm primary block" style="margin-top:10px" data-act="buyitem" data-cat="${lp.cat}" data-k="${lp.k}">Débloquer ${esc(lp.name)} — ${V.isAdmin?'gratuit':lp.cost+' jetons'}</button>`).join('')}${previewOwned?`<button class="btn primary block" style="margin-top:10px" data-act="applypreview">Appliquer ce look</button>`:''}<button class="link" style="margin-top:8px" data-act="clearpreview">Annuler l’aperçu</button>`:`<p class="sub" style="margin-top:10px;font-size:12px">Tape un élément ci-dessous pour l’essayer ici avant de le choisir.</p>`}
+  </div>
   <div class="card" style="text-align:center;padding:22px">
     <p class="sub">Solde</p>
-    <div class="bigk" style="justify-content:center;display:flex;align-items:baseline;gap:6px">${bal}<small>jetons</small></div>
+    <div class="bigk" style="justify-content:center;display:flex;align-items:baseline;gap:6px">${V.isAdmin?'∞':bal}<small>${V.isAdmin?'admin':'jetons'}</small></div>
     <p class="sub" style="margin-top:6px">${earned} gagnés au total · ${spent} dépensés${boostActive()?' · ⚡ boost x2 actif':''}</p>
   </div>
   <div class="sect"><h2>Comment gagner des jetons</h2></div>
@@ -5072,21 +5099,28 @@ function act(a,d){
     case 'removefriend':(async()=>{try{await SYNC.sb.from('friendships').delete().eq('id',d.id);toast('Ami retiré.');loadFriends();}catch(e){toast('Erreur.');}})();return;
     case 'friendsscope':V.friendsScope=d.k;render(true);return;
     case 'setthememode':S.profile.theme=d.m;save();applyTheme();render(true);return;
+    case 'previewitem':V.shopPreview=Object.assign({},V.shopPreview,{[d.field]:d.k});render(true);return;
+    case 'clearpreview':V.shopPreview={};render(true);return;
+    case 'applypreview':{
+      const pv=V.shopPreview||{};
+      const setters={accent:'accent',avatar:'avatar',frame:'frame',statusEmoji:'statusEmoji',title:'title',cta:'cta',celebration:'celebration'};
+      Object.keys(pv).forEach(f=>{if(setters[f])S.profile[setters[f]]=pv[f];});
+      V.shopPreview={};save();applyTheme();toast('Look appliqué !');render(true);return;}
     case 'buyitem':{
       if(d.cat==='freeze'){
         if(!V.isAdmin&&coinsBalance()<FREEZE_COST){toast('Pas assez de jetons ('+coinsBalance()+'/'+FREEZE_COST+').');return;}
-        S.freezesBought=(S.freezesBought||0)+(V.isAdmin?0:1);S.freezesAvailable=(S.freezesAvailable||0)+1;save();toast('Gel de série acheté !');render(true);return;
+        S.freezesBought=(S.freezesBought||0)+(V.isAdmin?0:1);S.freezesAvailable=(S.freezesAvailable||0)+1;save();V.shopBurstFlag=true;setTimeout(()=>{V.shopBurstFlag=false;},1600);toast('Gel de série acheté !');render(true);return;
       }
       if(d.cat==='boost'){
         if(!V.isAdmin&&coinsBalance()<BOOST_COST){toast('Pas assez de jetons ('+coinsBalance()+'/'+BOOST_COST+').');return;}
         const base=boostActive()?S.profile.boostUntil:Date.now();
-        S.profile.boostUntil=base+24*3600*1000;S.boostsBought=(S.boostsBought||0)+(V.isAdmin?0:1);save();toast('Boost x2 activé pour 24h !');render(true);return;
+        S.profile.boostUntil=base+24*3600*1000;S.boostsBought=(S.boostsBought||0)+(V.isAdmin?0:1);save();V.shopBurstFlag=true;setTimeout(()=>{V.shopBurstFlag=false;},1600);toast('Boost x2 activé pour 24h !');render(true);return;
       }
       const cat={accent:ACCENTS,avatar:AVATARS,title:TITLES,frame:FRAMES,celeb:CELEBRATIONS,status:STATUSES,cta:CTAS}[d.cat],k=d.k;
       if(!cat||!cat[k]||isUnlocked(cat,k))return;
       const cost=cat[k].cost||0;
       if(coinsBalance()<cost){toast('Pas assez de jetons ('+coinsBalance()+'/'+cost+').');return;}
-      S.unlocked=[...(S.unlocked||[]),k];save();toast('Débloqué !');render(true);return;}
+      S.unlocked=[...(S.unlocked||[]),k];save();V.shopBurstFlag=true;setTimeout(()=>{V.shopBurstFlag=false;},1600);toast('Débloqué !');render(true);return;}
     case 'setframe':S.profile.frame=d.k;save();render(true);return;
     case 'setstatus':S.profile.statusEmoji=d.k;save();render(true);return;
     case 'setcelebration':S.profile.celebration=d.k;save();render(true);return;
