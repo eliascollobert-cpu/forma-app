@@ -1046,6 +1046,7 @@ async function afterLogin(fresh){
   const m=sMeta();
   if(m.uid&&m.uid!==SYNC.user.id){m.version=0;m.dirty=true;}
   await pullNow();
+  checkAdmin();
   /* Une fois vraiment connecté, on ne doit plus rester sur l'écran d'accueil
      (qui affiche encore "Créer un compte / Google / Se connecter" même une fois
      authentifié, puisqu'il ne teste que la disponibilité de Supabase, pas SYNC.user).
@@ -1272,7 +1273,7 @@ const TITLES={
   machine:{label:'Increvable',cost:150},
   legend:{label:'Légende Forma',cost:350}
 };
-function isUnlocked(cat,k){const it=cat[k];return !it||((it.cost||0)===0)||((S.unlocked||[]).includes(k));}
+function isUnlocked(cat,k){if(V.isAdmin)return true;const it=cat[k];return !it||((it.cost||0)===0)||((S.unlocked||[]).includes(k));}
 function avatarGlyph(){const a=AVATARS[S.profile.avatar||'letter'];return a&&a.glyph?a.glyph:esc((S.profile.name||'F').charAt(0).toUpperCase());}
 function avatarFrameClass(){const f=S.profile.frame||'fr_none';return f==='fr_none'?'':' frame-'+f.slice(3);}
 function ctaText(){return esc((CTAS[S.profile.cta||'cta_default']||CTAS.cta_default).text);}
@@ -2481,6 +2482,54 @@ const PHANTOM_USERS=[
   {username:'nico_ironwill',day_streak:5,coins:220,avatar:'🚀'},
   {username:'emma_reps',day_streak:2,coins:95,avatar:'⭐️'}
 ];
+async function checkAdmin(){
+  if(!SYNC.user||!SYNC.sb){V.isAdmin=false;return;}
+  try{const {data}=await SYNC.sb.rpc('is_admin');V.isAdmin=!!data;}catch(e){V.isAdmin=false;}
+  render(true);
+}
+async function loadAdminUsers(){
+  V.admin={loading:true,users:[],err:''};render(true);
+  try{
+    const {data:profs,error}=await SYNC.sb.from('profiles').select('*').order('updated_at',{ascending:false});
+    if(error)throw error;
+    V.admin={loading:false,users:profs||[],err:''};
+  }catch(e){V.admin={loading:false,users:[],err:'Impossible de charger les utilisateurs.'};}
+  render(true);
+}
+async function loadAdminUserData(uid){
+  V.adminDetail={loading:true,uid,err:''};render(true);
+  try{
+    const {data,error}=await SYNC.sb.from('user_data').select('state,updated_at').eq('user_id',uid).maybeSingle();
+    if(error)throw error;
+    let stats=null;
+    if(data&&data.state){
+      const s=typeof data.state==='string'?JSON.parse(data.state):data.state;
+      stats={workouts:(s.workouts||[]).length,meals:(s.meals||[]).length,bodyweights:(s.bodyweights||[]).length,updated:data.updated_at};
+    }
+    V.adminDetail={loading:false,uid,stats,err:stats?'':'Aucune donnée pour cet utilisateur.'};
+  }catch(e){V.adminDetail={loading:false,uid,err:'Erreur de chargement.'};}
+  render(true);
+}
+function viewAdmin(){
+  const a=V.admin||{loading:true,users:[]};
+  const det=V.adminDetail;
+  return `
+  <div class="top"><div><h1>Admin</h1><p class="sub">Accès à tous les utilisateurs</p></div></div>
+  ${a.loading?`<p class="empty">Chargement…</p>`:a.err?`<p class="empty">${esc(a.err)}</p>`:`
+  <div class="card" style="padding:8px 18px">${a.users.map(u=>`
+    <div class="prow" style="cursor:default">
+      <span class="avatar sm${u.frame&&u.frame!=='fr_none'?' frame-'+u.frame.slice(3):''}">${esc(u.avatar||(u.display_name||'?').charAt(0).toUpperCase())}</span>
+      <span class="ln"><b>${u.username?'@'+esc(u.username):esc(u.display_name||'Sans nom')}</b><small>${u.day_streak||0} jours · ${u.coins||0} jetons · maj ${u.updated_at?fmt(u.updated_at.slice(0,10),{day:'numeric',month:'short'}):'?'}</small></span>
+      <button class="btn sm ghost" data-act="admininspect" data-id="${u.id}">${icon('right',16)}</button>
+    </div>
+    ${(det&&det.uid===u.id)?`<div class="card" style="margin:6px 0 10px;background:var(--surface2)">
+      ${det.loading?`<p class="empty">Chargement…</p>`:det.err?`<p class="empty">${esc(det.err)}</p>`:`
+      <div class="tiles" style="margin-top:0"><div class="tile"><div class="tv">${det.stats.workouts}</div><div class="tl">séances</div></div><div class="tile"><div class="tv">${det.stats.meals}</div><div class="tl">repas</div></div></div>
+      <div class="tiles"><div class="tile"><div class="tv">${det.stats.bodyweights}</div><div class="tl">pesées</div></div></div>
+      <button class="btn danger block" style="margin-top:10px" data-act="admindeleteuser" data-id="${u.id}">${V.confirm==='admindel'+u.id?'Confirmer la suppression':'Supprimer les données de cet utilisateur'}</button>`}
+    </div>`:''}
+  `).join('')}</div>`}`;
+}
 function friendsSectionHTML(){
   const f=V.friends||{loading:true,list:[],pending:[]};
   const board=(()=>{
@@ -2553,6 +2602,7 @@ function viewSettings(){
   </details>
   ${accountCard()}
   ${notifCard()}
+  ${V.isAdmin?`<div class="perslist" style="margin-top:10px"><button class="persrow" data-act="tab" data-t="admin"><span class="prt"><b>Admin</b><small>Accès à tous les utilisateurs</small></span>${icon('right',18)}</button></div>`:''}
   <button class="btn ghost block" style="margin-top:10px" data-act="guideopen">${icon('info',16)} Revoir le guide de démarrage</button>
   <details class="card fold" data-fold="data" ${V.open.data?'open':''}><summary><span class="fsum"><span class="sic" style="width:38px;height:38px">${icon('lock',18)}</span><span class="ln"><b>Mes données</b><small>Sauvegarde, restauration, réinitialisation</small></span></span></summary>
     <div style="height:12px"></div>
@@ -2954,7 +3004,7 @@ document.addEventListener('pointerdown',e=>FX.ripple(e),{passive:true});
 function render(keep){
   SCHED={};buildProg();rebuildFoods();planSync();
   const y=window.scrollY,onb=!!V.ob;
-  const views={today:viewToday,workout:viewWorkout,meals:viewMeals,progress:viewProgress,coach:viewCoach,settings:viewSettings,shop:viewShop};
+  const views={today:viewToday,workout:viewWorkout,meals:viewMeals,progress:viewProgress,coach:viewCoach,settings:viewSettings,shop:viewShop,admin:viewAdmin};
   $('#main').innerHTML=onb?viewOnb():views[V.tab]();
   const nav=$('#nav');
   nav.style.display=onb?'none':'flex';
@@ -4821,7 +4871,15 @@ const exFam=id=>famOf((exById(id)||{}).m);
 function act(a,d){
   if(a!=='delwk'&&a!=='reset'&&a!=='logout')V.confirm=null;
   switch(a){
-    case 'tab':V.tab=d.t;if(d.t==='progress'){checkNewBadges();checkDailyChallenge();}else if(d.t==='meals'||d.t==='today')checkDailyChallenge();else if(d.t==='coach'&&!V.friends)loadFriends();render();return;
+    case 'tab':V.tab=d.t;if(d.t==='progress'){checkNewBadges();checkDailyChallenge();}else if(d.t==='meals'||d.t==='today')checkDailyChallenge();else if(d.t==='coach'&&!V.friends)loadFriends();else if(d.t==='admin'&&!V.admin)loadAdminUsers();render();return;
+    case 'admininspect':{
+      if(V.adminDetail&&V.adminDetail.uid===d.id){V.adminDetail=null;render(true);return;}
+      loadAdminUserData(d.id);return;}
+    case 'admindeleteuser':{
+      if(V.confirm!=='admindel'+d.id){V.confirm='admindel'+d.id;render(true);return;}
+      V.confirm=null;
+      (async()=>{try{await SYNC.sb.from('user_data').delete().eq('user_id',d.id);toast('Données supprimées.');V.adminDetail=null;loadAdminUsers();}catch(e){toast('Erreur.');}})();
+      return;}
     case 'dshift':V[d.k]=addDays(V[d.k],+d.n);if(d.k==='mdate')V.ideas=null;render(true);return;
     case 'goto':V.date=d.date;V.tab='workout';render();return;
     case 'daytrain':{S.dayOv=S.dayOv||{};const dt=d.date,ws=weekStart(dt),before=Object.assign({},weekSched(ws));S.dayOv[dt]='train';save();render(true);
@@ -5016,13 +5074,13 @@ function act(a,d){
     case 'setthememode':S.profile.theme=d.m;save();applyTheme();render(true);return;
     case 'buyitem':{
       if(d.cat==='freeze'){
-        if(coinsBalance()<FREEZE_COST){toast('Pas assez de jetons ('+coinsBalance()+'/'+FREEZE_COST+').');return;}
-        S.freezesBought=(S.freezesBought||0)+1;S.freezesAvailable=(S.freezesAvailable||0)+1;save();toast('Gel de série acheté !');render(true);return;
+        if(!V.isAdmin&&coinsBalance()<FREEZE_COST){toast('Pas assez de jetons ('+coinsBalance()+'/'+FREEZE_COST+').');return;}
+        S.freezesBought=(S.freezesBought||0)+(V.isAdmin?0:1);S.freezesAvailable=(S.freezesAvailable||0)+1;save();toast('Gel de série acheté !');render(true);return;
       }
       if(d.cat==='boost'){
-        if(coinsBalance()<BOOST_COST){toast('Pas assez de jetons ('+coinsBalance()+'/'+BOOST_COST+').');return;}
+        if(!V.isAdmin&&coinsBalance()<BOOST_COST){toast('Pas assez de jetons ('+coinsBalance()+'/'+BOOST_COST+').');return;}
         const base=boostActive()?S.profile.boostUntil:Date.now();
-        S.profile.boostUntil=base+24*3600*1000;S.boostsBought=(S.boostsBought||0)+1;save();toast('Boost x2 activé pour 24h !');render(true);return;
+        S.profile.boostUntil=base+24*3600*1000;S.boostsBought=(S.boostsBought||0)+(V.isAdmin?0:1);save();toast('Boost x2 activé pour 24h !');render(true);return;
       }
       const cat={accent:ACCENTS,avatar:AVATARS,title:TITLES,frame:FRAMES,celeb:CELEBRATIONS,status:STATUSES,cta:CTAS}[d.cat],k=d.k;
       if(!cat||!cat[k]||isUnlocked(cat,k))return;
