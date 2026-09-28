@@ -2464,7 +2464,7 @@ async function loadFriends(){
     const outgoingProfIds=pendingOutgoing.map(r=>r.friend_id);
     let outgoingProfiles=[];
     if(outgoingProfIds.length){const {data:oprofs}=await SYNC.sb.from('profiles').select('*').in('id',outgoingProfIds);outgoingProfiles=oprofs||[];}
-    const {data:topGlobal}=await SYNC.sb.from('profiles').select('*').order('day_streak',{ascending:false}).order('coins',{ascending:false}).limit(20);
+    const {data:topGlobal}=await SYNC.sb.from('profiles').select('*').order('day_streak',{ascending:false}).order('coins',{ascending:false}).limit(500);
     V.friends={loading:false,me:(meRow&&meRow.username)||'',list:profiles,global:topGlobal||[],
       pending:pendingIncoming.map(r=>({id:r.id,profile:pendingProfiles.find(p=>p.id===r.user_id)})),
       outgoing:pendingOutgoing.map(r=>({id:r.id,profile:outgoingProfiles.find(p=>p.id===r.friend_id)})),err:''};
@@ -2479,7 +2479,7 @@ function friendsSectionHTML(){
     if(scope==='global'){
       const g=(f.global||[]).map(p=>Object.assign({},p,{isMe:p.id===(SYNC.user&&SYNC.user.id)}));
       const all=g.some(p=>p.isMe)?g.map(p=>p.isMe?Object.assign({},p,me,{isMe:true}):p):[...g,me];
-      return all.sort((a,b)=>(b.day_streak||0)-(a.day_streak||0)||(b.coins||0)-(a.coins||0)).slice(0,20);
+      return all.sort((a,b)=>(b.day_streak||0)-(a.day_streak||0)||(b.coins||0)-(a.coins||0));
     }
     const all=[...(f.list||[]),me].sort((a,b)=>(b.day_streak||0)-(a.day_streak||0)||(b.coins||0)-(a.coins||0));
     return all;
