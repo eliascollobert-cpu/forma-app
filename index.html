@@ -2392,15 +2392,16 @@ function viewFriends(){
   })();
   return `
   <div class="top"><div><h1>Amis</h1><p class="sub">Compare ta régularité</p></div></div>
-  ${(!f.loading&&!f.err&&!f.me)?`<div class="card">
-    <label class="f" for="myuser">Choisis ton pseudo</label>
+  ${(!f.loading&&!f.err&&(!f.me||V.editUsername))?`<div class="card">
+    <label class="f" for="myuser">${f.me?'Modifier ton pseudo':'Choisis ton pseudo'}</label>
     <div class="grid2" style="grid-template-columns:1fr auto;align-items:end;margin-top:6px">
-      <input id="myuser" type="text" placeholder="ex : elias_muscu" autocomplete="off" autocapitalize="none" maxlength="20">
+      <input id="myuser" type="text" placeholder="ex : elias_muscu" value="${esc(f.me||'')}" autocomplete="off" autocapitalize="none" maxlength="20">
       <button class="btn primary" data-act="saveusername">Valider</button>
     </div>
+    ${f.me?`<button class="link" data-act="cancelusername" style="margin-top:10px">Annuler</button>`:''}
     <p class="sub" style="margin-top:8px;font-size:12px">3 à 20 caractères : lettres, chiffres et _ . C’est ce que tes amis chercheront.</p>
   </div>`:`<div class="card">
-    ${f.me?`<p class="sub" style="margin-bottom:10px">Ton pseudo : <b style="color:var(--ink)">@${esc(f.me)}</b></p>`:''}
+    ${f.me?`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px"><p class="sub">Ton pseudo : <b style="color:var(--ink)">@${esc(f.me)}</b></p><button class="link" data-act="editusername">Modifier</button></div>`:''}
     <label class="f" for="friendname">Ajouter un ami</label>
     <div class="grid2" style="grid-template-columns:1fr auto;align-items:end;margin-top:6px">
       <input id="friendname" type="text" placeholder="@pseudo" autocomplete="off" autocapitalize="none">
@@ -4845,16 +4846,19 @@ function act(a,d){
     case 'openphotocompare':openSheet({type:'photocompare',beforeId:null,afterId:null});return;
     case 'openrecords':openSheet({type:'records'});return;
     case 'shoptab':V.shopTab=d.k;render(true);return;
+    case 'editusername':V.editUsername=true;render(true);return;
+    case 'cancelusername':V.editUsername=false;render(true);return;
     case 'saveusername':{
       const el=$('#myuser'),u=el?el.value.trim().replace(/^@/,'').toLowerCase():'';
       if(!/^[a-z0-9_]{3,20}$/.test(u)){toast('Pseudo invalide : 3 à 20 caractères, lettres/chiffres/_ .');return;}
       if(!SYNC.user){toast('Connecte-toi d’abord.');return;}
+      if(V.friends&&V.friends.me===u){V.editUsername=false;render(true);return;}
       (async()=>{
         try{
           await syncProfile();
           const {error}=await SYNC.sb.from('profiles').update({username:u}).eq('id',SYNC.user.id);
           if(error){toast(error.code==='23505'?'Ce pseudo est déjà pris.':'Erreur, réessaie.');return;}
-          toast('Pseudo enregistré !');loadFriends();
+          toast('Pseudo enregistré !');V.editUsername=false;loadFriends();
         }catch(e){toast('Erreur, réessaie.');}
       })();
       return;}
