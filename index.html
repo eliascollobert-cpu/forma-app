@@ -118,6 +118,25 @@ button.pill{cursor:pointer}
 .perslist{border-top:1px solid var(--line)}
 .accentgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
 .accentsw.locked{opacity:.55}
+.accentsw,.avatarsw{position:relative}
+.lockbadge{position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--surface)}
+.avatar.sm{width:32px;height:32px;font-size:14px;border-radius:10px;flex:none}
+.framepreview{width:32px;height:32px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.avatar.frame-gold,.framepreview.frame-gold{box-shadow:0 0 0 3px var(--gold)}
+.avatar.frame-neon,.framepreview.frame-neon{box-shadow:0 0 0 3px #00eaff,0 0 14px 2px color-mix(in srgb,#00eaff 60%,transparent)}
+.avatar.frame-fire,.framepreview.frame-fire{box-shadow:0 0 0 3px var(--accent);animation:fx-flame 1.4s ease-in-out infinite}
+[data-accent-anim="1"] .avatar{background-size:250% 250%;animation:fx-gradientshift 4s ease infinite}
+@keyframes fx-gradientshift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.confetti-burst{position:relative;height:0;overflow:visible}
+.confetti-burst i{position:absolute;top:-10px;width:8px;height:12px;border-radius:2px;animation-name:fx-confetti-fall;animation-timing-function:ease-in;animation-fill-mode:forwards}
+@keyframes fx-confetti-fall{to{transform:translateY(140px) rotate(340deg);opacity:0}}
+.fw-burst{position:relative;height:0;overflow:visible;display:flex;justify-content:center}
+.fw-center{position:relative;width:0;height:0;top:20px}
+.fw-center i{position:absolute;width:6px;height:6px;border-radius:50%;animation:fx-fw-burst .9s ease-out forwards}
+@keyframes fx-fw-burst{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(calc(cos(var(--ang)) * var(--dist)),calc(sin(var(--ang)) * var(--dist))) scale(.2);opacity:0}}
+.sparkle-burst{position:relative;height:70px;overflow:visible}
+.sparkle-burst i{position:absolute;color:var(--gold);animation:fx-sparkle-twinkle 1.4s ease-in-out infinite}
+@keyframes fx-sparkle-twinkle{0%,100%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1.1)}}
 .avatarsw{width:100%;aspect-ratio:1;border-radius:50%;border:2px solid var(--line);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;color:var(--muted)}
 .avatarsw.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--surface2))}
 .avatarsw.locked{opacity:.55}
@@ -869,7 +888,7 @@ async function disableNotifications(){
 /* ================= données ================= */
 const KEY='forma-coach-v1';
 let storageOK=true;
-const defaults=()=>({profile:{set:false,name:'',sex:'m',age:28,height:178,weight:75,activity:1.55,goal:'gain',weekGoal:4,rest:90,level:'mid',equip:'gym',time:60,focus:[],limits:[],diet:'none',snacks:true,tone:'coach',tempo:3,sound:true,voice:'hands',voiceName:null,voiceRate:1,pers:false,theme:'auto',accent:'default',avatar:'letter',title:'none'},bodyweights:[],workouts:[],meals:[],customEx:[],demo:false,chat:[],brief:null,favs:[],plan:null,customFoods:[],deloadUntil:null,recapSeen:null,weekRecapSeen:null,photos:[],badgesSeen:null,unlocked:[],freezesAvailable:0,freezesBought:0,freezesUsed:[],challengeDone:{},loginBonusDays:0,lastLoginBonus:null});
+const defaults=()=>({profile:{set:false,name:'',sex:'m',age:28,height:178,weight:75,activity:1.55,goal:'gain',weekGoal:4,rest:90,level:'mid',equip:'gym',time:60,focus:[],limits:[],diet:'none',snacks:true,tone:'coach',tempo:3,sound:true,voice:'hands',voiceName:null,voiceRate:1,pers:false,theme:'auto',accent:'default',avatar:'letter',title:'none',frame:'fr_none',celebration:'classic',statusEmoji:'st_none',cta:'cta_default',boostUntil:null},bodyweights:[],workouts:[],meals:[],customEx:[],demo:false,chat:[],brief:null,favs:[],plan:null,customFoods:[],deloadUntil:null,recapSeen:null,weekRecapSeen:null,photos:[],badgesSeen:null,unlocked:[],freezesAvailable:0,freezesBought:0,freezesUsed:[],challengeDone:{},loginBonusDays:0,lastLoginBonus:null,bonusCoins:0,boostsBought:0});
 function merge(o){const d=defaults();return Object.assign(d,o,{profile:Object.assign(d.profile,o.profile||{})});}
 function load(){try{const r=localStorage.getItem(KEY)||localStorage.getItem('coach-muscu-v1');if(r)return merge(JSON.parse(r));}catch(e){storageOK=false;}return defaults();}
 function save(){SCHED={};try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){storageOK=false;}syncDirty();}
@@ -1184,6 +1203,31 @@ function savePhoto(rec){return savePhotoLocal(rec).then(()=>{if(SYNC.user)upload
 function delPhoto(id){return delPhotoLocal(id).then(()=>{if(SYNC.user)removePhoto(id).catch(()=>{const m=sMeta();m.photoDel=(m.photoDel||[]).concat(id);sMetaSave();});});}
 
 let S=load();
+const BOOST_COST=60;
+const FRAMES={
+  fr_none:{name:'Aucun',cost:0},
+  fr_gold:{name:'Doré',cost:100},
+  fr_neon:{name:'Néon',cost:150},
+  fr_fire:{name:'Feu',cost:200}
+};
+const CELEBRATIONS={
+  classic:{name:'Classique',cost:0},
+  confetti:{name:'Confettis',cost:120},
+  fireworks:{name:'Feu d’artifice',cost:180},
+  sparkle:{name:'Étincelles',cost:90}
+};
+const STATUSES={
+  st_none:{glyph:null,cost:0},
+  st_fire:{glyph:'🔥',cost:30},st_muscle:{glyph:'💪',cost:30},st_target:{glyph:'🎯',cost:30},
+  st_star:{glyph:'⭐️',cost:30},st_heart:{glyph:'❤️',cost:30}
+};
+const CTAS={
+  cta_default:{text:'Lancer la séance',cost:0},
+  cta_attack:{text:'À l’attaque !',cost:40},
+  cta_go:{text:'GO 🔥',cost:40},
+  cta_ready:{text:'C’est parti',cost:40},
+  cta_beast:{text:'Libère la bête',cost:80}
+};
 const FREEZE_COST=80;
 const ACCENTS={
   default:{name:'Corail',accent:'#F2500F',grad:'linear-gradient(135deg,#FF7A2F 0%,#FF3D6E 100%)',cost:0},
@@ -1195,7 +1239,9 @@ const ACCENTS={
   midnight:{name:'Nuit',accent:'#6C5CE7',grad:'linear-gradient(135deg,#3D3D7A 0%,#6C5CE7 100%)',cost:100},
   emerald:{name:'Émeraude',accent:'#00B894',grad:'linear-gradient(135deg,#00B894 0%,#00CEC9 100%)',cost:150},
   ember:{name:'Braise',accent:'#D63031',grad:'linear-gradient(135deg,#D63031 0%,#E17055 100%)',cost:200},
-  chrome:{name:'Chrome',accent:'#636E72',grad:'linear-gradient(135deg,#2D3436 0%,#B2BEC3 100%)',cost:300}
+  chrome:{name:'Chrome',accent:'#636E72',grad:'linear-gradient(135deg,#2D3436 0%,#B2BEC3 100%)',cost:300},
+  aurora:{name:'Aurora',accent:'#00CEC9',grad:'linear-gradient(115deg,#00CEC9,#6C5CE7,#FD79A8,#00CEC9)',cost:400,anim:true},
+  prism:{name:'Prisme',accent:'#FF3D6E',grad:'linear-gradient(115deg,#FF7A2F,#FF3D6E,#8B3FF2,#0B6FF2,#FF7A2F)',cost:500,anim:true}
 };
 function totalCoinsEarned(){
   const ws=S.workouts.filter(w=>w.entries.some(e=>e.sets.length));
@@ -1206,9 +1252,10 @@ function totalCoinsEarned(){
   }));
   const badges=badgeDefs().filter(b=>b.earned).length;
   const challenges=Object.keys(S.challengeDone||{}).length,logins=S.loginBonusDays||0;
-  return ws.length*20+meals*2+prCount*10+badges*50+challenges*15+logins*5;
+  return ws.length*20+meals*2+prCount*10+badges*50+challenges*15+logins*5+(S.bonusCoins||0);
 }
-function coinsSpent(){return (S.unlocked||[]).reduce((a,k)=>{const it=ACCENTS[k]||AVATARS[k]||TITLES[k];return a+((it&&it.cost)||0);},0)+((S.freezesBought||0)*FREEZE_COST);}
+function coinsSpent(){return (S.unlocked||[]).reduce((a,k)=>{const it=ACCENTS[k]||AVATARS[k]||TITLES[k]||FRAMES[k]||CELEBRATIONS[k]||STATUSES[k]||CTAS[k];return a+((it&&it.cost)||0);},0)+((S.freezesBought||0)*FREEZE_COST)+((S.boostsBought||0)*BOOST_COST);}
+function boostActive(){return (S.profile.boostUntil||0)>Date.now();}
 function coinsBalance(){return totalCoinsEarned()-coinsSpent();}
 function accentAvailable(k){return (ACCENTS[k].cost||0)===0||((S.unlocked||[]).includes(k));}
 const AVATARS={
@@ -1227,6 +1274,8 @@ const TITLES={
 };
 function isUnlocked(cat,k){const it=cat[k];return !it||((it.cost||0)===0)||((S.unlocked||[]).includes(k));}
 function avatarGlyph(){const a=AVATARS[S.profile.avatar||'letter'];return a&&a.glyph?a.glyph:esc((S.profile.name||'F').charAt(0).toUpperCase());}
+function avatarFrameClass(){const f=S.profile.frame||'fr_none';return f==='fr_none'?'':' frame-'+f.slice(3);}
+function ctaText(){return esc((CTAS[S.profile.cta||'cta_default']||CTAS.cta_default).text);}
 function applyTheme(){
   const mode=S.profile.theme||'auto';
   if(mode==='light'||mode==='dark')document.documentElement.setAttribute('data-theme',mode);
@@ -1234,6 +1283,7 @@ function applyTheme(){
   const a=ACCENTS[S.profile.accent]||ACCENTS.default;
   document.documentElement.style.setProperty('--accent',a.accent);
   document.documentElement.style.setProperty('--grad',a.grad);
+  document.documentElement.setAttribute('data-accent-anim',a.anim?'1':'0');
 }
 applyTheme();
 let PDB=null,V_PHOTOS_KEY=1;
@@ -1843,12 +1893,14 @@ function todaysChallenge(){const d=today();let h=0;for(let i=0;i<d.length;i++)h=
 function checkDailyChallenge(){
   const c=todaysChallenge(),d=today();
   if((S.challengeDone||{})[d])return;
-  if(c.check()){S.challengeDone=Object.assign({},S.challengeDone,{[d]:c.id});save();toastReward('🎯 Défi du jour réussi : +15 jetons');}
+  if(c.check()){S.challengeDone=Object.assign({},S.challengeDone,{[d]:c.id});if(boostActive())S.bonusCoins=(S.bonusCoins||0)+15;save();toastReward('🎯 Défi du jour réussi : +'+(boostActive()?30:15)+' jetons');}
 }
 function checkLoginBonus(){
   const d=today();
   if(S.lastLoginBonus===d)return;
-  S.lastLoginBonus=d;S.loginBonusDays=(S.loginBonusDays||0)+1;save();
+  S.lastLoginBonus=d;S.loginBonusDays=(S.loginBonusDays||0)+1;
+  if(boostActive())S.bonusCoins=(S.bonusCoins||0)+5;
+  save();
 }
 function dayStreak(){
   let d=today(),n=0;
@@ -2007,7 +2059,7 @@ function viewToday(){
   ${backupCard()}
   <div class="top">
     <div><h1>${hello}</h1><p class="sub">${fmt(td,{weekday:'long',day:'numeric',month:'long'})}</p></div>
-    <button class="avatar" data-act="tab" data-t="coach" aria-label="Profil">${avatarGlyph()}</button>
+    <button class="avatar${avatarFrameClass()}" data-act="tab" data-t="coach" aria-label="Profil">${avatarGlyph()}</button>
   </div>
   <div class="pillrow" style="margin-bottom:12px">
     <span class="pill">${icon('dumbbell',15)} ${wc} / ${p.weekGoal} séances</span>
@@ -2026,7 +2078,7 @@ function viewToday(){
     <span class="tag">${sets?'Séance en cours':started?'Séance préparée':'Séance conseillée'}</span>
     <h2>${sets?sets+' séries enregistrées':started?'Ta séance est prête':rec.n}</h2>
     <p>${sets?esc(names.slice(0,3).join(', '))+(names.length>3?'…':''):started?'Le chrono te guide : répétitions, repos et charges sont prévus.':rec.s+' · charges déjà prévues d’après ta dernière séance'}</p>
-    <button class="btn white" data-act="${(sets||started)?(pend>0?'openplay':'goto'):'quickplay'}" data-date="${td}" data-i="${ri}">${(sets||started)?(pend>0?(sets?'Reprendre la séance':'Démarrer la séance'):'Voir la séance'):'Lancer la séance'} ${icon('arrow',18)}</button>
+    <button class="btn white" data-act="${(sets||started)?(pend>0?'openplay':'goto'):'quickplay'}" data-date="${td}" data-i="${ri}">${(sets||started)?(pend>0?(sets?'Reprendre la séance':'Démarrer la séance'):'Voir la séance'):ctaText()} ${icon('arrow',18)}</button>
   </div>`}
   ${(()=>{const c=todaysChallenge(),done=(S.challengeDone||{})[td];return `<div class="card" style="display:flex;align-items:center;gap:12px;margin-top:12px">
     <span class="sic" style="width:38px;height:38px;${done?`color:var(--good);background:color-mix(in srgb,var(--good) 15%,var(--surface2))`:''}">${icon(done?'check':'flame',18)}</span>
@@ -2109,7 +2161,7 @@ function viewWorkout(){
   ${pendingSets(w)>0?`<div class="card planall" style="flex-direction:column;align-items:stretch"><div><b>Séance prête · ${pendingSets(w)} séries</b><p>${TTS?'Mets tes écouteurs : Forma te guide à la voix, série après série.':'Forma te guide : chrono, répétitions à faire et temps de repos.'}</p></div><button class="btn primary block" data-act="openplay" data-date="${d}">${icon('play',18)} Démarrer la séance guidée</button><button class="link" data-act="doallplans">Tout valider sans chrono</button></div>`:''}
   ${en.length?'':dayCard(d)}
   ${en.length?en.map(e=>entryHTML(w,e)).join(''):!isTrainDay(d)?'':`
-    <button class="btn primary block stack" style="margin-top:4px" data-act="quickplay" data-date="${d}" data-i="${nextTpl()}">${icon('play',20)}<span><b>Lancer la séance</b><small>Conseillée : ${TPL[nextTpl()].n}</small></span></button>
+    <button class="btn primary block stack" style="margin-top:4px" data-act="quickplay" data-date="${d}" data-i="${nextTpl()}">${icon('play',20)}<span><b>${ctaText()}</b><small>Conseillée : ${TPL[nextTpl()].n}</small></span></button>
     ${AI?`<button class="btn block" style="margin-top:10px" data-act="genworkout" ${V.busy?'disabled':''}>${icon('spark',18)} ${V.busy==='wgen'?'Forma compose ta séance…':'Générer ma séance'}</button>${V.wErr?`<p class="err">${esc(V.wErr)}</p>`:''}`:''}
     <details class="fold plain" data-fold="tpls" ${V.open.tpls?'open':''}><summary>Choisir une autre séance</summary><div class="tpls" style="margin-top:4px">${TPL.map((t,i)=>`<button class="tpl" data-act="tpl" data-i="${i}"><b>${t.n}</b><span>${t.s}</span><em>${t.ex.length} exercices</em></button>`).join('')}</div>
     ${prev?`<button class="btn block" style="margin-top:12px" data-act="copylast">Reprendre la séance du ${fmt(prev.date,{day:'numeric',month:'short'})}</button>`:''}</details>`}
@@ -2201,7 +2253,9 @@ function checkNewBadges(){
   const fresh=earned.filter(id=>!S.badgesSeen.includes(id));
   if(fresh.length){
     const byId={};badgeDefs().forEach(b=>byId[b.id]=b);
-    S.badgesSeen=[...S.badgesSeen,...fresh];save();
+    S.badgesSeen=[...S.badgesSeen,...fresh];
+    if(boostActive())S.bonusCoins=(S.bonusCoins||0)+50*fresh.length;
+    save();
     fresh.forEach((id,i)=>setTimeout(()=>toastReward('🏆 Badge débloqué : '+byId[id].title),i*1700));
   }
 }
@@ -2294,7 +2348,7 @@ function viewCoach(){
   </div>`:''}
   ${AI?chatHTML():''}
   <div class="card">
-    <div class="prof"><div class="avatar">${avatarGlyph()}</div><div><h3 style="font-size:19px">${p.name?esc(p.name):'Mon profil'}</h3><p class="sub">${GOALS[p.goal][0]}${(p.title&&TITLES[p.title]&&p.title!=='none')?' · '+esc(TITLES[p.title].label):''}</p></div></div>
+    <div class="prof"><div class="avatar${avatarFrameClass()}">${avatarGlyph()}</div><div><h3 style="font-size:19px">${p.name?esc(p.name):'Mon profil'}</h3><p class="sub">${GOALS[p.goal][0]}${(p.title&&TITLES[p.title]&&p.title!=='none')?' · '+esc(TITLES[p.title].label):''}</p></div></div>
     <div class="seg" style="margin-top:14px" role="group" aria-label="Objectif">${['gain','maintain','cut'].map(g=>`<button class="${p.goal===g?'on':''}" data-act="setgoal" data-g="${g}">${{gain:'Muscle',maintain:'Maintien',cut:'Sèche'}[g]}</button>`).join('')}</div>
     <div style="margin-top:18px"><div class="bigk">${fmtN(t.kcal)}<small>kcal / jour</small></div><p class="sub">Dépense estimée : ${fmtN(t.tdee)} kcal</p>${t.adj?`<p class="sub" style="color:var(--ink);font-weight:700">Ajusté automatiquement de ${t.adj>0?'+':''}${t.adj} kcal selon ta tendance de poids.</p>`:''}</div>
     <div class="tgt"><div><b style="color:var(--prot)">${t.p} g</b><span>Protéines</span></div><div><b style="color:var(--carb)">${t.c} g</b><span>Glucides</span></div><div><b style="color:var(--fat)">${t.f} g</b><span>Lipides</span></div></div>
@@ -2302,32 +2356,57 @@ function viewCoach(){
   ${deloadActive()?`<div class="banner resume">${icon('info',20)}<div class="rt"><b>Semaine allégée en cours</b><small>Charges réduites d’environ 15 % jusqu’au ${fmt(S.deloadUntil,{day:'numeric',month:'short'})}</small></div><button class="btn sm" data-act="stopdeload">Arrêter</button></div>`:''}
   <div class="sect"><h2>Analyse du coach</h2></div>
   ${ins.length?insHTML(ins):`<p class="empty">Rien à signaler. Continue à enregistrer tes séances et tes repas.</p>`}
-  ${!deloadActive()?`<button class="link" data-act="startdeload" style="margin:2px 0 6px">${icon('spark',16)} Générer ma semaine allégée</button>`:''}`;
+  ${!deloadActive()?`<button class="link" data-act="startdeload" style="margin:2px 0 6px">${icon('spark',16)} Générer ma semaine allégée</button>`:''}
+  ${friendsSectionHTML()}`;
 }
 
 function viewShop(){
   const earned=totalCoinsEarned(),spent=coinsSpent(),bal=earned-spent;
   const tab=V.shopTab||'accent';
-  const TABS_SHOP=[['accent','Couleurs'],['avatar','Avatars'],['title','Titres'],['power','Bonus']];
+  const TABS_SHOP=[['accent','Couleurs'],['avatar','Avatars'],['title','Titres'],['fx','Effets'],['power','Bonus']];
+  const lockB=av=>av?'':`<i class="lockbadge">${icon('lock',10)}</i>`;
+  const swGrid=(cat,curKey,setAct,glyphOf)=>`<div class="accentgrid">${Object.keys(cat).map(k=>{
+    const av=isUnlocked(cat,k),cur=curKey===k;
+    return `<button class="avatarsw ${cur?'on':''} ${av?'':'locked'}" data-act="${av?setAct:'buyitem'}" data-cat="${setAct==='setavatar'?'avatar':setAct==='setframe'?'frame':setAct==='setstatus'?'status':'accent'}" data-k="${k}" aria-label="${cat[k].name||cat[k].glyph||k}${av?'':' — '+cat[k].cost+' jetons'}">${glyphOf(k)}${lockB(av)}</button>`;
+  }).join('')}</div>`;
   let grid;
   if(tab==='power'){
-    grid=`<div class="prow" style="cursor:default"><span class="sic" style="width:38px;height:38px">❄️</span><span class="ln"><b>Gel de série</b><small>${S.freezesAvailable||0} en stock · protège ton streak un jour manqué</small></span><button class="btn sm primary" data-act="buyitem" data-cat="freeze" data-k="freeze">${FREEZE_COST} ${icon('flame',14)}</button></div>`;
+    const boostOn=boostActive();
+    grid=`<div class="prow" style="cursor:default"><span class="sic" style="width:38px;height:38px">❄️</span><span class="ln"><b>Gel de série</b><small>${S.freezesAvailable||0} en stock · protège ton streak un jour manqué</small></span><button class="btn sm primary" data-act="buyitem" data-cat="freeze" data-k="freeze">${FREEZE_COST} ${icon('flame',14)}</button></div>
+    <div class="prow" style="cursor:default"><span class="sic" style="width:38px;height:38px">⚡</span><span class="ln"><b>Boost x2 jetons (24h)</b><small>${boostOn?'Actif jusqu’à '+new Date(S.profile.boostUntil).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'Double les gains de badges, défis et connexion'}</small></span><button class="btn sm primary" data-act="buyitem" data-cat="boost" data-k="boost">${BOOST_COST} ${icon('flame',14)}</button></div>`;
+  }else if(tab==='fx'){
+    const FXICON={classic:'⏹️',confetti:'🎉',fireworks:'🎆',sparkle:'✨'};
+    grid=`<p class="sub" style="margin-bottom:8px">Écran de fin de séance</p><div class="perslist">${Object.keys(CELEBRATIONS).map(k=>{
+      const av=isUnlocked(CELEBRATIONS,k),cur=S.profile.celebration===k,c=CELEBRATIONS[k];
+      return `<button class="persrow" data-act="${av?'setcelebration':'buyitem'}" data-cat="celeb" data-k="${k}"><span style="font-size:20px;width:28px;text-align:center;${av?'':'opacity:.4'}">${FXICON[k]||''}</span><span class="prt"><b>${esc(c.name)}</b><small>${av?(cur?'Sélectionné':'Disponible'):c.cost+' jetons'}</small></span>${cur?icon('check',18):av?icon('right',18):icon('lock',16)}</button>`;
+    }).join('')}</div>`;
   }else if(tab==='accent'){
     grid=`<div class="accentgrid">${Object.keys(ACCENTS).map(k=>{
       const av=isUnlocked(ACCENTS,k),cur=S.profile.accent===k;
-      return `<button class="accentsw ${cur?'on':''} ${av?'':'locked'}" data-act="${av?'setaccent':'buyitem'}" data-cat="accent" data-k="${k}" aria-label="${ACCENTS[k].name}${av?'':' — '+ACCENTS[k].cost+' jetons'}" style="background:${ACCENTS[k].grad}">${cur?icon('check',18):av?'':icon('lock',16)}</button>`;
+      return `<button class="accentsw ${cur?'on':''} ${av?'':'locked'}" data-act="${av?'setaccent':'buyitem'}" data-cat="accent" data-k="${k}" aria-label="${ACCENTS[k].name}${av?'':' — '+ACCENTS[k].cost+' jetons'}" style="background:${ACCENTS[k].grad}">${cur?icon('check',18):(ACCENTS[k].anim?'✨':'')}${lockB(av)}</button>`;
     }).join('')}</div>
     <div class="shoplabels">${Object.keys(ACCENTS).map(k=>`<span>${esc(ACCENTS[k].name)}${ACCENTS[k].cost?' · '+ACCENTS[k].cost:''}</span>`).join('')}</div>`;
   }else if(tab==='avatar'){
     grid=`<div class="accentgrid">${Object.keys(AVATARS).map(k=>{
       const av=isUnlocked(AVATARS,k),cur=(S.profile.avatar||'letter')===k,a=AVATARS[k];
-      return `<button class="avatarsw ${cur?'on':''} ${av?'':'locked'}" data-act="${av?'setavatar':'buyitem'}" data-cat="avatar" data-k="${k}" aria-label="${a.glyph||'Initiale'}${av?'':' — '+a.cost+' jetons'}">${av?(a.glyph||esc((S.profile.name||'F').charAt(0).toUpperCase())):icon('lock',16)}</button>`;
+      return `<button class="avatarsw ${cur?'on':''} ${av?'':'locked'}" data-act="${av?'setavatar':'buyitem'}" data-cat="avatar" data-k="${k}" aria-label="${a.glyph||'Initiale'}${av?'':' — '+a.cost+' jetons'}">${a.glyph||esc((S.profile.name||'F').charAt(0).toUpperCase())}${lockB(av)}</button>`;
     }).join('')}</div>
-    <div class="shoplabels">${Object.keys(AVATARS).map(k=>`<span>${AVATARS[k].cost||'Gratuit'}${AVATARS[k].cost?' jetons':''}</span>`).join('')}</div>`;
+    <div class="shoplabels">${Object.keys(AVATARS).map(k=>`<span>${AVATARS[k].cost||'Gratuit'}${AVATARS[k].cost?' jetons':''}</span>`).join('')}</div>
+    <p class="sub" style="margin:18px 0 8px">Cadre d’avatar</p>
+    ${swGrid(FRAMES,S.profile.frame||'fr_none','setframe',k=>`<span class="framepreview${k==='fr_none'?'':' frame-'+k.slice(3)}">${avatarGlyph()}</span>`)}
+    <div class="shoplabels">${Object.keys(FRAMES).map(k=>`<span>${FRAMES[k].cost||'Gratuit'}${FRAMES[k].cost?' jetons':''}</span>`).join('')}</div>
+    <p class="sub" style="margin:18px 0 8px">Emoji de statut</p>
+    ${swGrid(STATUSES,S.profile.statusEmoji||'st_none','setstatus',k=>STATUSES[k].glyph||icon('check',16))}
+    <div class="shoplabels">${Object.keys(STATUSES).map(k=>`<span>${STATUSES[k].cost||'Gratuit'}${STATUSES[k].cost?' jetons':''}</span>`).join('')}</div>`;
   }else{
     grid=`<div class="perslist">${Object.keys(TITLES).filter(k=>k!=='none').map(k=>{
       const av=isUnlocked(TITLES,k),cur=S.profile.title===k,t=TITLES[k];
       return `<button class="persrow" data-act="${av?'settitle':'buyitem'}" data-cat="title" data-k="${k}"><span class="prt"><b>${esc(t.label)}</b><small>${av?(cur?'Sélectionné':'Disponible'):t.cost+' jetons'}</small></span>${cur?icon('check',18):av?icon('right',18):icon('lock',16)}</button>`;
+    }).join('')}</div>
+    <p class="sub" style="margin:18px 0 4px">Texte du bouton principal</p>
+    <div class="perslist">${Object.keys(CTAS).map(k=>{
+      const av=isUnlocked(CTAS,k),cur=(S.profile.cta||'cta_default')===k,c=CTAS[k];
+      return `<button class="persrow" data-act="${av?'setcta':'buyitem'}" data-cat="cta" data-k="${k}"><span class="prt"><b>${esc(c.text)}</b><small>${av?(cur?'Sélectionné':'Disponible'):c.cost+' jetons'}</small></span>${cur?icon('check',18):av?icon('right',18):icon('lock',16)}</button>`;
     }).join('')}</div>`;
   }
   const modes=[['auto','Automatique'],['light','Clair'],['dark','Sombre']];
@@ -2336,7 +2415,7 @@ function viewShop(){
   <div class="card" style="text-align:center;padding:22px">
     <p class="sub">Solde</p>
     <div class="bigk" style="justify-content:center;display:flex;align-items:baseline;gap:6px">${bal}<small>jetons</small></div>
-    <p class="sub" style="margin-top:6px">${earned} gagnés au total · ${spent} dépensés</p>
+    <p class="sub" style="margin-top:6px">${earned} gagnés au total · ${spent} dépensés${boostActive()?' · ⚡ boost x2 actif':''}</p>
   </div>
   <div class="sect"><h2>Comment gagner des jetons</h2></div>
   <div class="card" style="padding:8px 18px">
@@ -2358,13 +2437,15 @@ async function syncProfile(){
     await SYNC.sb.from('profiles').upsert({
       id:SYNC.user.id,display_name:S.profile.name||'',
       avatar:(AVATARS[S.profile.avatar||'letter']||{}).glyph||'',
+      status_emoji:(STATUSES[S.profile.statusEmoji||'st_none']||{}).glyph||null,
+      frame:S.profile.frame||'fr_none',
       day_streak:dayStreak(),coins:coinsBalance(),updated_at:new Date().toISOString()
     });
   }catch(e){}
 }
 async function loadFriends(){
-  if(!SYNC.user){V.friends={loading:false,list:[],pending:[],err:'Connecte-toi pour ajouter des amis.'};render(true);return;}
-  V.friends={loading:true,list:[],pending:[],err:''};render(true);
+  if(!SYNC.user){V.friends={loading:false,list:[],pending:[],outgoing:[],err:'Connecte-toi pour ajouter des amis.'};render(true);return;}
+  V.friends={loading:true,list:[],pending:[],outgoing:[],err:''};render(true);
   try{
     await syncProfile();
     const uid=SYNC.user.id;
@@ -2373,25 +2454,40 @@ async function loadFriends(){
     if(error)throw error;
     const accepted=(rows||[]).filter(r=>r.status==='accepted');
     const pendingIncoming=(rows||[]).filter(r=>r.status==='pending'&&r.friend_id===uid);
+    const pendingOutgoing=(rows||[]).filter(r=>r.status==='pending'&&r.user_id===uid);
     const friendIds=accepted.map(r=>r.user_id===uid?r.friend_id:r.user_id);
     let profiles=[];
-    if(friendIds.length){const {data:profs}=await SYNC.sb.from('profiles').select('*').in('id',friendIds);profiles=profs||[];}
+    if(friendIds.length){const {data:profs}=await SYNC.sb.from('profiles').select('*').in('id',friendIds);profiles=(profs||[]).map(p=>{const r=accepted.find(r=>r.user_id===p.id||r.friend_id===p.id);return Object.assign({},p,{friendshipId:r&&r.id});});}
     const pendingProfIds=pendingIncoming.map(r=>r.user_id);
     let pendingProfiles=[];
     if(pendingProfIds.length){const {data:pprofs}=await SYNC.sb.from('profiles').select('*').in('id',pendingProfIds);pendingProfiles=pprofs||[];}
-    V.friends={loading:false,me:(meRow&&meRow.username)||'',list:profiles,pending:pendingIncoming.map(r=>({id:r.id,profile:pendingProfiles.find(p=>p.id===r.user_id)})),err:''};
-  }catch(e){V.friends={loading:false,list:[],pending:[],err:'Impossible de charger tes amis pour le moment.'};}
+    const outgoingProfIds=pendingOutgoing.map(r=>r.friend_id);
+    let outgoingProfiles=[];
+    if(outgoingProfIds.length){const {data:oprofs}=await SYNC.sb.from('profiles').select('*').in('id',outgoingProfIds);outgoingProfiles=oprofs||[];}
+    const {data:topGlobal}=await SYNC.sb.from('profiles').select('*').order('day_streak',{ascending:false}).order('coins',{ascending:false}).limit(20);
+    V.friends={loading:false,me:(meRow&&meRow.username)||'',list:profiles,global:topGlobal||[],
+      pending:pendingIncoming.map(r=>({id:r.id,profile:pendingProfiles.find(p=>p.id===r.user_id)})),
+      outgoing:pendingOutgoing.map(r=>({id:r.id,profile:outgoingProfiles.find(p=>p.id===r.friend_id)})),err:''};
+  }catch(e){V.friends={loading:false,list:[],pending:[],outgoing:[],err:'Impossible de charger tes amis pour le moment.'};}
   render(true);
 }
-function viewFriends(){
+function friendsSectionHTML(){
   const f=V.friends||{loading:true,list:[],pending:[]};
   const board=(()=>{
-    const me={display_name:(S.profile.name||'Toi'),avatar:avatarGlyph(),day_streak:dayStreak(),coins:coinsBalance(),isMe:true};
+    const me={display_name:(S.profile.name||'Toi'),avatar:avatarGlyph(),frame:S.profile.frame||'fr_none',status_emoji:(STATUSES[S.profile.statusEmoji||'st_none']||{}).glyph||'',day_streak:dayStreak(),coins:coinsBalance(),isMe:true};
+    const scope=V.friendsScope||'friends';
+    if(scope==='global'){
+      const g=(f.global||[]).map(p=>Object.assign({},p,{isMe:p.id===(SYNC.user&&SYNC.user.id)}));
+      const all=g.some(p=>p.isMe)?g.map(p=>p.isMe?Object.assign({},p,me,{isMe:true}):p):[...g,me];
+      return all.sort((a,b)=>(b.day_streak||0)-(a.day_streak||0)||(b.coins||0)-(a.coins||0)).slice(0,20);
+    }
     const all=[...(f.list||[]),me].sort((a,b)=>(b.day_streak||0)-(a.day_streak||0)||(b.coins||0)-(a.coins||0));
     return all;
   })();
+  const medal=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':null;
+  const rowAvatar=p=>`<span class="avatar sm${p.frame&&p.frame!=='fr_none'?' frame-'+p.frame.slice(3):''}">${esc(p.avatar||(p.display_name||'?').charAt(0).toUpperCase())}</span>`;
   return `
-  <div class="top"><div><h1>Amis</h1><p class="sub">Compare ta régularité</p></div></div>
+  <div class="sect"><h2>Amis</h2></div>
   ${(!f.loading&&!f.err&&(!f.me||V.editUsername))?`<div class="card">
     <label class="f" for="myuser">${f.me?'Modifier ton pseudo':'Choisis ton pseudo'}</label>
     <div class="grid2" style="grid-template-columns:1fr auto;align-items:end;margin-top:6px">
@@ -2408,17 +2504,22 @@ function viewFriends(){
       <button class="btn primary" data-act="addfriend">Ajouter</button>
     </div>
   </div>`}
-  ${(f.pending&&f.pending.length)?`<div class="sect"><h2>Demandes reçues</h2></div><div class="card" style="padding:8px 18px">${f.pending.map(p=>`<div class="prow" style="cursor:default"><span class="ln"><b>${esc((p.profile&&(p.profile.username?'@'+p.profile.username:p.profile.display_name))||'Quelqu’un')}</b><small>Veut t’ajouter en ami</small></span><button class="btn sm primary" data-act="acceptfriend" data-id="${p.id}">Accepter</button><button class="ibtn" data-act="declinefriend" data-id="${p.id}" aria-label="Refuser">${icon('close',16)}</button></div>`).join('')}</div>`:''}
+  ${(f.pending&&f.pending.length)?`<div class="sect"><h2>Demandes reçues</h2></div><div class="card" style="padding:8px 18px">${f.pending.map(p=>`<div class="prow" style="cursor:default">${rowAvatar(p.profile||{})}<span class="ln"><b>${esc((p.profile&&(p.profile.username?'@'+p.profile.username:p.profile.display_name))||'Quelqu’un')}</b><small>Veut t’ajouter en ami</small></span><button class="btn sm primary" data-act="acceptfriend" data-id="${p.id}">Accepter</button><button class="ibtn" data-act="declinefriend" data-id="${p.id}" aria-label="Refuser">${icon('close',16)}</button></div>`).join('')}</div>`:''}
+  ${(f.outgoing&&f.outgoing.length)?`<div class="sect"><h2>Demandes envoyées</h2></div><div class="card" style="padding:8px 18px">${f.outgoing.map(p=>`<div class="prow" style="cursor:default">${rowAvatar(p.profile||{})}<span class="ln"><b>${esc((p.profile&&(p.profile.username?'@'+p.profile.username:p.profile.display_name))||'Quelqu’un')}</b><small>En attente de réponse</small></span><button class="btn sm ghost" data-act="declinefriend" data-id="${p.id}">Annuler</button></div>`).join('')}</div>`:''}
   <div class="sect"><h2>Classement</h2></div>
-  ${f.loading?`<p class="empty">Chargement…</p>`:f.err?`<p class="empty">${esc(f.err)}</p>`:board.length<=1?`<p class="empty">Ajoute des amis pour comparer vos régularités et vos jetons.</p>`:
-    `<div class="card" style="padding:8px 18px">${board.map((p,i)=>`<div class="prow" style="cursor:default"><b style="width:24px;color:var(--muted)">${i+1}</b><span class="ln"><b>${esc(p.isMe?(p.display_name||'Toi'):(p.username?'@'+p.username:(p.display_name||'Ami')))}${p.isMe?' (toi)':''}</b><small>${p.day_streak||0} jours de suite · ${p.coins||0} jetons</small></span></div>`).join('')}</div>`}`;
+  <div class="seg" role="group" aria-label="Classement" style="margin-bottom:12px">
+    <button class="${(V.friendsScope||'friends')==='friends'?'on':''}" data-act="friendsscope" data-k="friends">Amis</button>
+    <button class="${V.friendsScope==='global'?'on':''}" data-act="friendsscope" data-k="global">Global</button>
+  </div>
+  ${f.loading?`<p class="empty">Chargement…</p>`:f.err?`<p class="empty">${esc(f.err)}</p>`:board.length<=1?`<p class="empty">${(V.friendsScope||'friends')==='global'?'Pas encore assez de joueurs pour un classement global.':'Ajoute des amis pour comparer vos régularités et vos jetons.'}</p>`:
+    `<div class="card" style="padding:8px 18px">${board.map((p,i)=>`<div class="prow" style="cursor:default"><b style="width:24px;text-align:center">${medal(i)||`<span style="color:var(--muted)">${i+1}</span>`}</b>${rowAvatar(p)}<span class="ln"><b>${esc(p.isMe?(p.display_name||'Toi'):(p.username?'@'+p.username:(p.display_name||'Ami')))}${p.status_emoji?' '+p.status_emoji:''}${p.isMe?' (toi)':''}</b><small>${p.day_streak||0} jours de suite · ${p.coins||0} jetons</small></span>${(!p.isMe&&p.friendshipId)?`<button class="ibtn" data-act="removefriend" data-id="${p.friendshipId}" aria-label="Retirer">${icon('close',16)}</button>`:''}</div>`).join('')}</div>`}`;
 }
 function viewSettings(){
   const p=S.profile,t=T();
   return `
   <div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="ibtn" data-act="tab" data-t="coach" aria-label="Retour">${icon('left',20)}</button><div><h1>Réglages</h1><p class="sub">Profil, personnalisation et compte</p></div></div></div>
   <div class="card" style="display:flex;align-items:center;gap:14px">
-    <div class="avatar" style="width:56px;height:56px;font-size:22px;border-radius:16px">${avatarGlyph()}</div>
+    <div class="avatar${avatarFrameClass()}" style="width:56px;height:56px;font-size:22px;border-radius:16px">${avatarGlyph()}</div>
     <div style="min-width:0;flex:1"><h3 style="font-size:18px">${p.name?esc(p.name):'Mon profil'}</h3><p class="sub">${GOALS[p.goal][0]} · ${fmtN(t.kcal)} kcal/jour</p></div>
     <span class="coinbar sm">${icon('flame',14)} ${coinsBalance()}</span>
   </div>
@@ -2441,7 +2542,6 @@ function viewSettings(){
   </details>
   ${accountCard()}
   ${notifCard()}
-  <div class="perslist" style="margin-top:10px"><button class="persrow" data-act="tab" data-t="friends"><span class="prt"><b>Amis</b><small>Compare ta régularité</small></span>${icon('right',18)}</button></div>
   <button class="btn ghost block" style="margin-top:10px" data-act="guideopen">${icon('info',16)} Revoir le guide de démarrage</button>
   <details class="card fold" data-fold="data" ${V.open.data?'open':''}><summary><span class="fsum"><span class="sic" style="width:38px;height:38px">${icon('lock',18)}</span><span class="ln"><b>Mes données</b><small>Sauvegarde, restauration, réinitialisation</small></span></span></summary>
     <div style="height:12px"></div>
@@ -2483,6 +2583,26 @@ function foodRows(q,cat){
     +(l.length>max?`<p class="sub" style="text-align:center;padding:10px">${l.length-max} autres résultats : précise ta recherche.</p>`:'');
 }
 
+function celebrationHTML(){
+  const c=S.profile.celebration||'classic';
+  if(c==='classic')return '';
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  if(c==='confetti'){
+    const colors=['var(--accent)','var(--prot)','var(--gold)','var(--good)','var(--fat)'];
+    const bits=Array.from({length:26},()=>`<i style="left:${rnd(0,100)}%;background:${colors[Math.floor(Math.random()*colors.length)]};animation-delay:${rnd(0,.4)}s;animation-duration:${rnd(1.4,2.2)}s;transform:rotate(${rnd(0,360)}deg)"></i>`).join('');
+    return `<div class="confetti-burst">${bits}</div>`;
+  }
+  if(c==='fireworks'){
+    const colors=['var(--accent)','var(--gold)','var(--prot)','#fff'];
+    const dots=Array.from({length:20},()=>{const ang=rnd(0,360),dist=rnd(60,130);return `<i style="--ang:${ang}deg;--dist:${dist}px;background:${colors[Math.floor(Math.random()*colors.length)]};animation-delay:${rnd(0,.3)}s"></i>`;}).join('');
+    return `<div class="fw-burst"><div class="fw-center">${dots}</div></div>`;
+  }
+  if(c==='sparkle'){
+    const stars=Array.from({length:14},()=>`<i style="left:${rnd(4,96)}%;top:${rnd(4,60)}%;animation-delay:${rnd(0,1)}s">${icon('spark',14)}</i>`).join('');
+    return `<div class="sparkle-burst">${stars}</div>`;
+  }
+  return '';
+}
 function sheetHTML(){
   const s=V.sheet;if(!s)return '';
   let body='',title='';
@@ -2652,7 +2772,7 @@ function sheetHTML(){
     const w=getWorkout(V.date);title='Séance terminée';
     if(w){
       const prs=[];w.entries.forEach(en=>{if(!en.sets.length)return;const pb=prevBest(en.exId,w.date),top=e1(topSet(en.sets));if(pb>0&&top>pb+0.01)prs.push((exById(en.exId)||{n:'?'}).n);});
-      body=`<div class="tiles" style="margin-top:0"><div class="tile"><div class="tv">${setCount(w)}</div><div class="tl">séries</div></div><div class="tile"><div class="tv">${tonnage(w)>=1000?nf(tonnage(w)/1000)+'<small>t</small>':fmtN(tonnage(w))+'<small>kg</small>'}</div><div class="tl">soulevés</div></div></div>
+      body=celebrationHTML()+`<div class="tiles" style="margin-top:0"><div class="tile"><div class="tv">${setCount(w)}</div><div class="tl">séries</div></div><div class="tile"><div class="tv">${tonnage(w)>=1000?nf(tonnage(w)/1000)+'<small>t</small>':fmtN(tonnage(w))+'<small>kg</small>'}</div><div class="tl">soulevés</div></div></div>
       <div class="tiles"><div class="tile"><div class="tv">${w.entries.filter(e=>e.sets.length).length}</div><div class="tl">exercices</div></div><div class="tile"><div class="tv gold">${prs.length}</div><div class="tl">record${prs.length>1?'s':''}</div></div></div>
       ${prs.length?`<p style="margin-top:14px;font-weight:700" class="gold">${icon('trophy',16)} ${prs.map(esc).join(', ')}</p>`:''}
       <p class="sub" style="margin-top:12px">Bien joué ! Pense à manger des protéines dans l’heure qui suit.</p>
@@ -2823,7 +2943,7 @@ document.addEventListener('pointerdown',e=>FX.ripple(e),{passive:true});
 function render(keep){
   SCHED={};buildProg();rebuildFoods();planSync();
   const y=window.scrollY,onb=!!V.ob;
-  const views={today:viewToday,workout:viewWorkout,meals:viewMeals,progress:viewProgress,coach:viewCoach,settings:viewSettings,shop:viewShop,friends:viewFriends};
+  const views={today:viewToday,workout:viewWorkout,meals:viewMeals,progress:viewProgress,coach:viewCoach,settings:viewSettings,shop:viewShop};
   $('#main').innerHTML=onb?viewOnb():views[V.tab]();
   const nav=$('#nav');
   nav.style.display=onb?'none':'flex';
@@ -4690,7 +4810,7 @@ const exFam=id=>famOf((exById(id)||{}).m);
 function act(a,d){
   if(a!=='delwk'&&a!=='reset'&&a!=='logout')V.confirm=null;
   switch(a){
-    case 'tab':V.tab=d.t;if(d.t==='progress'){checkNewBadges();checkDailyChallenge();}else if(d.t==='meals'||d.t==='today')checkDailyChallenge();else if(d.t==='friends'&&!V.friends)loadFriends();render();return;
+    case 'tab':V.tab=d.t;if(d.t==='progress'){checkNewBadges();checkDailyChallenge();}else if(d.t==='meals'||d.t==='today')checkDailyChallenge();else if(d.t==='coach'&&!V.friends)loadFriends();render();return;
     case 'dshift':V[d.k]=addDays(V[d.k],+d.n);if(d.k==='mdate')V.ideas=null;render(true);return;
     case 'goto':V.date=d.date;V.tab='workout';render();return;
     case 'daytrain':{S.dayOv=S.dayOv||{};const dt=d.date,ws=weekStart(dt),before=Object.assign({},weekSched(ws));S.dayOv[dt]='train';save();render(true);
@@ -4880,17 +5000,28 @@ function act(a,d){
       return;}
     case 'acceptfriend':(async()=>{try{await SYNC.sb.from('friendships').update({status:'accepted'}).eq('id',d.id);toast('Ami ajouté !');loadFriends();}catch(e){toast('Erreur.');}})();return;
     case 'declinefriend':(async()=>{try{await SYNC.sb.from('friendships').delete().eq('id',d.id);loadFriends();}catch(e){toast('Erreur.');}})();return;
+    case 'removefriend':(async()=>{try{await SYNC.sb.from('friendships').delete().eq('id',d.id);toast('Ami retiré.');loadFriends();}catch(e){toast('Erreur.');}})();return;
+    case 'friendsscope':V.friendsScope=d.k;render(true);return;
     case 'setthememode':S.profile.theme=d.m;save();applyTheme();render(true);return;
     case 'buyitem':{
       if(d.cat==='freeze'){
         if(coinsBalance()<FREEZE_COST){toast('Pas assez de jetons ('+coinsBalance()+'/'+FREEZE_COST+').');return;}
         S.freezesBought=(S.freezesBought||0)+1;S.freezesAvailable=(S.freezesAvailable||0)+1;save();toast('Gel de série acheté !');render(true);return;
       }
-      const cat={accent:ACCENTS,avatar:AVATARS,title:TITLES}[d.cat],k=d.k;
+      if(d.cat==='boost'){
+        if(coinsBalance()<BOOST_COST){toast('Pas assez de jetons ('+coinsBalance()+'/'+BOOST_COST+').');return;}
+        const base=boostActive()?S.profile.boostUntil:Date.now();
+        S.profile.boostUntil=base+24*3600*1000;S.boostsBought=(S.boostsBought||0)+1;save();toast('Boost x2 activé pour 24h !');render(true);return;
+      }
+      const cat={accent:ACCENTS,avatar:AVATARS,title:TITLES,frame:FRAMES,celeb:CELEBRATIONS,status:STATUSES,cta:CTAS}[d.cat],k=d.k;
       if(!cat||!cat[k]||isUnlocked(cat,k))return;
       const cost=cat[k].cost||0;
       if(coinsBalance()<cost){toast('Pas assez de jetons ('+coinsBalance()+'/'+cost+').');return;}
       S.unlocked=[...(S.unlocked||[]),k];save();toast('Débloqué !');render(true);return;}
+    case 'setframe':S.profile.frame=d.k;save();render(true);return;
+    case 'setstatus':S.profile.statusEmoji=d.k;save();render(true);return;
+    case 'setcelebration':S.profile.celebration=d.k;save();render(true);return;
+    case 'setcta':S.profile.cta=d.k;save();render(true);return;
     case 'setavatar':S.profile.avatar=d.k;save();render(true);return;
     case 'settitle':S.profile.title=d.k;save();render(true);return;
     case 'setaccent':S.profile.accent=d.k;save();applyTheme();render(true);return;
