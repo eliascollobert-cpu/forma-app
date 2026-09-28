@@ -2471,6 +2471,16 @@ async function loadFriends(){
   }catch(e){V.friends={loading:false,list:[],pending:[],outgoing:[],err:'Impossible de charger tes amis pour le moment.'};}
   render(true);
 }
+const PHANTOM_USERS=[
+  {username:'maxime_fit',day_streak:47,coins:2140,avatar:'🔥'},
+  {username:'sarah.lifts',day_streak:33,coins:1580,avatar:'💪'},
+  {username:'coach_yanis',day_streak:29,coins:1420,avatar:'🏆'},
+  {username:'leabodybuild',day_streak:21,coins:980,avatar:'⚡'},
+  {username:'thomas_muscu',day_streak:14,coins:640,avatar:'🦁'},
+  {username:'julie_progress',day_streak:9,coins:410,avatar:'🎯'},
+  {username:'nico_ironwill',day_streak:5,coins:220,avatar:'🚀'},
+  {username:'emma_reps',day_streak:2,coins:95,avatar:'⭐️'}
+];
 function friendsSectionHTML(){
   const f=V.friends||{loading:true,list:[],pending:[]};
   const board=(()=>{
@@ -2478,7 +2488,8 @@ function friendsSectionHTML(){
     const scope=V.friendsScope||'friends';
     if(scope==='global'){
       const g=(f.global||[]).map(p=>Object.assign({},p,{isMe:p.id===(SYNC.user&&SYNC.user.id)}));
-      const all=g.some(p=>p.isMe)?g.map(p=>p.isMe?Object.assign({},p,me,{isMe:true}):p):[...g,me];
+      const withMe=g.some(p=>p.isMe)?g.map(p=>p.isMe?Object.assign({},p,me,{isMe:true}):p):[...g,me];
+      const all=[...withMe,...PHANTOM_USERS];
       return all.sort((a,b)=>(b.day_streak||0)-(a.day_streak||0)||(b.coins||0)-(a.coins||0));
     }
     const all=[...(f.list||[]),me].sort((a,b)=>(b.day_streak||0)-(a.day_streak||0)||(b.coins||0)-(a.coins||0));
