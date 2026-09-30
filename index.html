@@ -781,14 +781,14 @@ svg.fig .fl{stroke:var(--line);stroke-width:2}
 .card>.empty{border-style:solid;border-color:transparent;background:var(--surface2);border-radius:12px}
 .card>.empty:only-child{border:1.5px dashed var(--line);background:transparent;border-radius:16px}
 /* régularité : grille pleine largeur, mois, légende */
-.heatwrap{display:grid;grid-template-columns:16px 1fr;column-gap:6px;row-gap:5px}
-.heatmon{grid-column:2;display:grid;grid-template-columns:repeat(var(--wk),1fr);gap:3px;font-size:10.5px;font-weight:700;color:var(--muted);height:13px}
+.heatwrap{display:grid;grid-template-columns:16px minmax(0,1fr);column-gap:6px;row-gap:5px}
+.heatmon{grid-column:2;display:grid;grid-template-columns:repeat(var(--wk),minmax(0,1fr));gap:3px;font-size:10.5px;font-weight:700;color:var(--muted);height:13px}
 .heatmon span{white-space:nowrap;overflow:visible}
 .heatdays{display:grid;grid-template-rows:repeat(7,1fr);gap:3px;font-size:10px;font-weight:700;color:var(--muted)}
 .heatdays span{display:flex;align-items:center}
-.heatgrid2{display:grid;grid-template-columns:repeat(var(--wk),1fr);gap:3px}
-.heatgrid2 .heatcol{display:grid;grid-template-rows:repeat(7,1fr);gap:3px}
-.heatgrid2 .heatcell{width:auto;height:auto;aspect-ratio:1;border-radius:4px}
+.heatgrid2{display:grid;grid-template-columns:repeat(var(--wk),minmax(0,1fr));gap:3px;min-width:0}
+.heatgrid2 .heatcol{display:grid;grid-template-rows:repeat(7,1fr);gap:3px;min-width:0}
+.heatgrid2 .heatcell{width:auto;min-width:0;height:auto;aspect-ratio:1;border-radius:4px}
 .heatleg{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:10px;font-size:11px;font-weight:700;color:var(--muted)}
 .heatleg .heatcell{width:11px;height:11px}
 .heatleg span{margin:0 3px}
@@ -1431,6 +1431,79 @@ button.cf{cursor:pointer}
   main.enter .hch,main.enter .hnut,main.enter .hbrief,main.enter .hpers,main.enter .cf{animation:fx-rise .42s cubic-bezier(.2,.8,.2,1) both}
   main.enter .hnut{animation-delay:.06s}
 }
+/* ===== Suivi des pas ===== */
+.stdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 color-mix(in srgb,var(--good) 60%,transparent)}
+.hstep{display:grid;grid-template-columns:84px minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;text-align:left;color:var(--ink);font:inherit;cursor:pointer;padding:14px 16px;font-variant-numeric:tabular-nums;transition:transform .14s cubic-bezier(.3,.7,.4,1)}
+.hstep:active{transform:scale(.985)}
+.hstep .sr{position:relative;width:84px;height:84px}
+.hstep .sr svg{display:block}
+.hstep .sr .ic{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:var(--accent)}
+.hstep .sv{min-width:0}
+.hstep .sv b{display:block;font-family:var(--font-d);font-size:30px;line-height:1;letter-spacing:-.03em}
+.hstep .sv b small{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:0}
+.hstep .sv>span{display:block;margin-top:7px;font-size:12.5px;font-weight:700;color:var(--muted);line-height:1.4}
+.hstep .sv>.live{display:flex;align-items:center;gap:6px;color:var(--good);font-weight:800;margin-top:6px}
+.hstep>svg{color:var(--muted)}
+.sthero{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:8px;align-items:center;margin-top:4px}
+.sthero .big{display:block;font-family:var(--font-d);font-size:46px;line-height:.95;letter-spacing:-.035em}
+.sthero .lab{display:block;font-size:14px;font-weight:700;color:var(--muted);margin-top:8px}
+.sthero .pc{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:5px 11px;border-radius:999px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font-weight:800;font-size:12.5px}
+.sthero .pc.ok{background:color-mix(in srgb,var(--good) 15%,transparent);color:var(--good)}
+.string{position:relative;width:132px;height:132px}
+.string .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--accent)}
+.string .c.ok{color:var(--good)}
+.sttiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.sttiles>div{background:var(--surface2);border-radius:16px;padding:12px 12px}
+.sttiles b{display:block;font-family:var(--font-d);font-size:21px;letter-spacing:-.02em;line-height:1.05;white-space:nowrap}
+.sttiles b small{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0}
+.sttiles>div>span{display:block;margin-top:5px;font-size:11.5px;font-weight:700;color:var(--muted)}
+.stblk{margin-top:18px}
+.stblk>h3{font-size:15px;margin:0 2px 10px}
+.stadd{display:flex;gap:8px;flex-wrap:wrap}
+.stadd .chip{display:inline-flex;align-items:center;gap:6px}
+.stin{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;margin-top:10px}
+.stin input{font-variant-numeric:tabular-nums}
+.sthint{margin:8px 2px 0;font-size:12.5px;font-weight:600;color:var(--muted);line-height:1.45}
+.stlive{border-radius:20px;padding:16px;background:linear-gradient(160deg,color-mix(in srgb,var(--good) 10%,var(--surface2)),var(--surface2) 75%);border:1px solid color-mix(in srgb,var(--good) 24%,var(--line))}
+.stlive.idle{background:var(--surface2);border-color:var(--line)}
+.stlive .lh{display:flex;align-items:center;gap:12px}
+.stlive .lh>div{flex:1;min-width:0}
+.stlive .lh b{display:block;font-size:15.5px}
+.stlive .lh small{display:block;color:var(--muted);font-weight:600;font-size:12.5px;margin-top:2px}
+.stlive .ln{display:flex;align-items:baseline;gap:10px;margin:14px 0 4px}
+.stlive .ln b{font-family:var(--font-d);font-size:44px;letter-spacing:-.03em;line-height:1}
+.stlive .ln span{color:var(--muted);font-weight:700;font-size:14px}
+.stlive .btn{margin-top:12px}
+.stlive .sic{background:var(--surface);color:var(--accent)}
+.stlive .sic svg{width:22px;height:22px}
+.stwk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;align-items:end;height:92px;position:relative;margin-top:6px}
+.stwk .tg{position:absolute;left:0;right:0;border-top:1.5px dashed color-mix(in srgb,var(--ink) 24%,transparent);pointer-events:none}
+.stwk i{display:block;width:100%;max-width:30px;margin:0 auto;border-radius:9px 9px 5px 5px;background:var(--accent)}
+.stwk i.ok{background:var(--good)}
+.stwk i.none{background:color-mix(in srgb,var(--ink) 9%,transparent)}
+.stwl{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;margin-top:8px;text-align:center;font-size:12px;font-weight:700;color:var(--muted)}
+.stwl .now{color:var(--ink);font-weight:800}
+.ststats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.ststats>div{text-align:center;padding:10px 6px;border-radius:14px;background:var(--surface2)}
+.ststats b{display:block;font-family:var(--font-d);font-size:18px;letter-spacing:-.02em}
+.ststats span{display:block;margin-top:3px;font-size:11.5px;font-weight:700;color:var(--muted)}
+.stgoal{display:grid;grid-template-columns:54px minmax(0,1fr) 54px;gap:10px;align-items:center}
+.stgoal button{height:54px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface2);color:var(--ink);font:inherit;font-size:24px;font-weight:700;cursor:pointer}
+.stgoal div{text-align:center;font-family:var(--font-d);font-weight:700;font-size:28px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stgoal div small{display:block;font-family:var(--font);font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:0}
+.stpre{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.stfoot{margin-top:18px;text-align:center}
+.pstep{display:block;width:100%;text-align:left;color:var(--ink);font:inherit;cursor:pointer;padding:16px;font-variant-numeric:tabular-nums}
+.pstep .stwk{height:70px}
+.pstep .pm{display:flex;justify-content:space-between;gap:10px;margin-top:12px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.pstep .pm b{color:var(--ink)}
+@media (prefers-reduced-motion:no-preference){
+  .stdot{animation:stpulse 1.6s ease-out infinite}
+  @keyframes stpulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--good) 55%,transparent)}100%{box-shadow:0 0 0 9px transparent}}
+  main.enter .hstep circle[stroke-linecap]{animation:fx-ring 1s cubic-bezier(.25,.8,.25,1) both .1s}
+  main.enter .hstep,main.enter .pstep{animation:fx-rise .42s cubic-bezier(.2,.8,.2,1) both}
+}
+@media (max-width:359px){.sthero{grid-template-columns:minmax(0,1fr) 108px}.string,.string svg{width:108px;height:108px}.sthero .big{font-size:38px}.hstep{grid-template-columns:70px minmax(0,1fr) auto;gap:10px}.hstep .sr,.hstep .sr svg{width:70px;height:70px}.hstep .sv b{font-size:26px}}
 </style>
 <script>
 /* Supabase JS v2.45.4 — embarquée localement (au lieu d'un CDN tiers) pour éviter les blocages de "Tracking Prevention" (Edge) / ITP sur le stockage de session */
@@ -1466,6 +1539,7 @@ const norm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerC
 const weekStart=d=>addDays(d,-((parse(d).getDay()+6)%7));
 
 const IC={
+  steps:'<ellipse cx="8" cy="7" rx="2.8" ry="4.2"/><ellipse cx="8" cy="14.3" rx="1.9" ry="1.6"/><ellipse cx="16.5" cy="10.5" rx="2.8" ry="4.2"/><ellipse cx="16.5" cy="17.8" rx="1.9" ry="1.6"/>',
   users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M17.5 14.6c2.3.3 3.7 1.9 4 4.4"/>',
   bubble:'<path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-4 3.5V17H6a2 2 0 0 1-2-2z"/><path d="M8.5 9.5h7M8.5 12.5h4"/>',
   wand:'<path d="M5 19L15 9"/><path d="M13.3 7.3l3.4 3.4"/><path d="M18.5 3v3M17 4.5h3M7 3.5v2M6 4.5h2"/>',
@@ -1585,7 +1659,7 @@ async function disableNotifications(){
 /* ================= données ================= */
 const KEY='forma-coach-v1';
 let storageOK=true;
-const defaults=()=>({profile:{set:false,name:'',sex:'m',age:28,height:178,weight:75,activity:1.55,goal:'gain',weekGoal:4,rest:90,level:'mid',equip:'gym',time:60,focus:[],limits:[],diet:'none',snacks:true,tone:'coach',tempo:3,sound:true,voice:'hands',voiceName:null,voiceRate:1,pers:false,theme:'auto',accent:'default',avatar:'letter',title:'none',frame:'fr_none',celebration:'classic',statusEmoji:'st_none',cta:'cta_default',boostUntil:null},bodyweights:[],workouts:[],meals:[],customEx:[],demo:false,chat:[],brief:null,favs:[],plan:null,customFoods:[],deloadUntil:null,recapSeen:null,weekRecapSeen:null,photos:[],badgesSeen:null,unlocked:[],freezesAvailable:0,freezesBought:0,freezesUsed:[],challengeDone:{},loginBonusDays:0,lastLoginBonus:null,bonusCoins:0,boostsBought:0,tomb:{},adj:null});
+const defaults=()=>({profile:{set:false,name:'',sex:'m',age:28,height:178,weight:75,activity:1.55,goal:'gain',weekGoal:4,rest:90,level:'mid',equip:'gym',time:60,focus:[],limits:[],diet:'none',snacks:true,tone:'coach',tempo:3,sound:true,voice:'hands',voiceName:null,voiceRate:1,pers:false,theme:'auto',accent:'default',avatar:'letter',title:'none',frame:'fr_none',celebration:'classic',statusEmoji:'st_none',cta:'cta_default',boostUntil:null},bodyweights:[],workouts:[],meals:[],customEx:[],demo:false,chat:[],brief:null,favs:[],plan:null,customFoods:[],deloadUntil:null,recapSeen:null,weekRecapSeen:null,photos:[],badgesSeen:null,unlocked:[],freezesAvailable:0,freezesBought:0,freezesUsed:[],challengeDone:{},loginBonusDays:0,lastLoginBonus:null,bonusCoins:0,boostsBought:0,tomb:{},adj:null,steps:{on:false,goal:8000,log:{},hit:{}}});
 function merge(o){const d=defaults();return Object.assign(d,o,{profile:Object.assign(d.profile,o.profile||{})});}
 function load(){try{const r=localStorage.getItem(KEY)||localStorage.getItem('coach-muscu-v1');if(r)return merge(JSON.parse(r));}catch(e){storageOK=false;}return defaults();}
 /* Suivi des suppressions (« pierres tombales ») : à chaque sauvegarde, on compare les identifiants
@@ -1722,6 +1796,7 @@ function mergeStates(a,b){
     return Object.assign({},base,{entries});
   });
   out.dayOv=Object.assign({},b.dayOv||{},a.dayOv||{});
+  {const sa=a.steps||{},sb=b.steps||{};out.steps=Object.assign({},sb,sa,{log:Object.assign({},sb.log||{},sa.log||{}),hit:Object.assign({},sb.hit||{},sa.hit||{})});}
   out.chat=(a.chat||[]).length>=(b.chat||[]).length?a.chat:b.chat;
   return out;
 }
@@ -2675,7 +2750,8 @@ const CHALLENGES=[
   {id:'weighin',text:'Note ton poids aujourd’hui',check:()=>S.bodyweights.some(b=>b.date===today())},
   {id:'finishwk',text:'Termine une séance aujourd’hui',check:()=>{const w=getWorkout(today());return w?setCount(w)>0:false;}}
 ];
-function todaysChallenge(){const d=today();let h=0;for(let i=0;i<d.length;i++)h=(h*31+d.charCodeAt(i))>>>0;return CHALLENGES[h%CHALLENGES.length];}
+const STEP_CHALLENGE={id:'steps',get text(){return 'Atteins '+fmtN(stepGoal())+' pas aujourd’hui';},check:()=>stepsOf(today())>=stepGoal()};
+function todaysChallenge(){const d=today(),pool=stepsOn()?[...CHALLENGES,STEP_CHALLENGE]:CHALLENGES;let h=0;for(let i=0;i<d.length;i++)h=(h*31+d.charCodeAt(i))>>>0;return pool[h%pool.length];}
 function checkDailyChallenge(){
   const c=todaysChallenge(),d=today();
   if((S.challengeDone||{})[d])return;
@@ -2765,6 +2841,12 @@ function insights(){
     else if(g==='gain'&&sl>0.7)out.push({tone:'warn',title:'Prise de poids rapide',text:'Tendance : '+s3+'. '+adjNote(-1),tab:'progress'});
     else if(g==='cut'&&sl>-0.15)out.push({tone:'warn',title:'La sèche n’avance pas',text:'Tendance : '+s3+'. '+adjNote(-1),tab:'progress'});
     else if(g==='cut'&&sl<-1)out.push({tone:'warn',title:'Perte trop rapide',text:'Tendance : '+s3+'. '+adjNote(1),tab:'progress'});
+  }
+  if(stepsOn()){
+    const gl=stepGoal(),tn=stepsOf(td);
+    if(tn>=gl)out.push({tone:'good',title:'Objectif de pas atteint',text:fmtN(tn)+' pas aujourd’hui ('+nf(stepKm(tn))+' km).'});
+    else{const av=stepAvg(7),cnt=Array.from({length:7},(_,i)=>stepsOf(addDays(td,-i))).filter(v=>v>0).length;
+      if(cnt>=3&&av<gl*0.7)out.push({tone:'info',title:'Tu marches moins que ton objectif',text:'Moyenne de '+fmtN(av)+' pas sur 7 jours, pour un objectif de '+fmtN(gl)+'. Une marche de 20 minutes ajoute environ 2 000 pas.'});}
   }
   const gg=goalGuard();if(gg)out.push({tone:'warn',title:'Objectif ajusté pour ta sécurité',text:gg.text});
   const order={warn:0,info:1,good:2};
@@ -2883,6 +2965,166 @@ function homeNutrition(d){
     <span class="hmac">${mac}</span>
   </button>`;
 }
+/* ================= Suivi des pas ================= */
+/* Limites du web : pas d'accès à Santé / Google Fit, et aucun comptage écran éteint. Le suivi repose donc sur
+   (1) la saisie des pas (total du jour ou ajouts rapides) et (2) un comptage en direct avec le capteur de mouvement,
+   app ouverte et écran allumé (maintenu allumé pendant la marche). */
+const ensureSteps=()=>{if(!S.steps||typeof S.steps!=='object')S.steps={on:false,goal:8000,log:{},hit:{}};if(!S.steps.log)S.steps.log={};if(!S.steps.hit)S.steps.hit={};if(!S.steps.goal)S.steps.goal=8000;return S.steps;};
+const stepsOn=()=>!!(S.steps&&S.steps.on);
+const stepGoal=()=>Math.max(1000,Math.min(50000,(S.steps&&S.steps.goal)||8000));
+const stepsOf=d=>{const e=S.steps&&S.steps.log&&S.steps.log[d];return e?(+e.n||0):0;};
+const stepsLive=d=>stepsOf(d)+((d===today()&&V.walk)?V.walk.n:0);
+const strideM=()=>(S.profile.sex==='f'?0.413:0.415)*(S.profile.height||170)/100;   /* longueur d'un pas (m), estimée d'après la taille */
+const stepKm=n=>n*strideM()/1000;
+const stepKcal=n=>stepKm(n)*weightNow()*0.53;
+const stepMin=n=>Math.round(n/100);
+function setSteps(d,n,src){
+  ensureSteps();n=Math.max(0,Math.min(100000,Math.round(+n||0)));
+  if(n===0)delete S.steps.log[d];else S.steps.log[d]={n,src:src||'manual',upd:Date.now()};
+  if(d===today()&&n>=stepGoal()&&!S.steps.hit[d]){S.steps.hit[d]=1;toast('🎉 Objectif de pas atteint !',true);}
+  save();checkDailyChallenge();
+}
+function stepStreak(){
+  let d=today(),n=0;if(stepsOf(d)<stepGoal())d=addDays(d,-1);
+  while(n<400&&stepsOf(d)>=stepGoal()){n++;d=addDays(d,-1);}
+  return n;
+}
+function stepAvg(days){let t=0,c=0;for(let i=0;i<days;i++){const v=stepsOf(addDays(today(),-i));if(v>0){t+=v;c++;}}return c?Math.round(t/c):0;}
+/* détecteur de pas : filtre la gravité, lisse, puis compte un pas à chaque pic franc ; une marche n'est
+   confirmée qu'après 4 pas rapprochés (évite de compter les secousses isolées) */
+class StepDet{
+  constructor(){this.reset();}
+  reset(){this.g=null;this.s=0;this.env=0.8;this.armed=true;this.last=-1e9;this.pt=null;this.cand=0;this.ints=[];}
+  push(x,y,z,t){
+    const m=Math.sqrt(x*x+y*y+z*z);
+    if(this.pt===null){this.g=m;this.pt=t;return 0;}
+    const dt=Math.max(1,Math.min(200,t-this.pt));this.pt=t;
+    const k=tau=>1-Math.exp(-dt/tau);
+    this.g+=(m-this.g)*k(600);
+    const a=m-this.g;
+    this.s+=(a-this.s)*k(45);
+    this.env+=(Math.abs(this.s)-this.env)*k(2500);
+    const thr=Math.max(0.85,this.env*1.15);
+    if(!this.armed&&this.s<thr*0.35)this.armed=true;
+    let out=0;
+    if(this.armed&&this.s>thr&&t-this.last>270){
+      this.armed=false;
+      const gap=t-this.last;this.last=t;
+      if(gap>1800){this.cand=1;this.ints=[];this.confirmed=false;}
+      else{
+        this.cand++;this.ints.push(gap);if(this.ints.length>3)this.ints.shift();
+        /* une marche a une cadence régulière : on exige 3 intervalles voisins (écart < 40 % de la moyenne) */
+        if(this.ints.length===3){
+          const mean=(this.ints[0]+this.ints[1]+this.ints[2])/3,spread=Math.max(...this.ints)-Math.min(...this.ints);
+          if(spread/mean<0.4){if(this.cand>=4){out=this.confirmed?1:4;this.confirmed=true;}}
+          else{this.confirmed=false;this.cand=1;this.ints=[];}
+        }
+      }
+    }
+    return out;
+  }
+}
+const walkSupported=()=>typeof DeviceMotionEvent!=='undefined';
+function walkFeed(x,y,z,t){
+  const w=V.walk;if(!w)return;w.got=true;
+  const k=w.det.push(x,y,z,t);
+  if(k){w.n+=k;updateStepsLive();}
+}
+function walkMotion(e){const a=e.accelerationIncludingGravity;if(!a||a.x==null||a.y==null||a.z==null)return;walkFeed(a.x,a.y,a.z,e.timeStamp||performance.now());}
+async function walkStart(){
+  if(V.walk)return;
+  if(!walkSupported()){toast('Capteur de mouvement indisponible sur cet appareil.');return;}
+  try{
+    if(typeof DeviceMotionEvent.requestPermission==='function'){
+      const r=await DeviceMotionEvent.requestPermission();
+      if(r!=='granted'){toast('Autorise l’accès au mouvement pour compter tes pas.');return;}
+    }
+  }catch(e){toast('Impossible d’accéder au capteur de mouvement.');return;}
+  V.walk={n:0,t0:Date.now(),det:new StepDet(),got:false};
+  window.addEventListener('devicemotion',walkMotion);
+  wakeOn();
+  V.walk.tm=setInterval(updateStepsLive,1000);
+  V.walk.chk=setTimeout(()=>{if(V.walk&&!V.walk.got){walkStop(true);toast('Aucun signal du capteur : saisis tes pas à la main.');}},3000);
+  refreshSteps();
+}
+function walkStop(silent){
+  const w=V.walk;if(!w)return 0;
+  window.removeEventListener('devicemotion',walkMotion);clearInterval(w.tm);clearTimeout(w.chk);
+  V.walk=null;if(!V.play)wakeOff();
+  if(w.n>0){ensureSteps();setSteps(today(),stepsOf(today())+w.n,'sensor');if(!silent)toast('+'+fmtN(w.n)+' pas ajoutés');}
+  refreshSteps();return w.n;
+}
+/* mises à jour ciblées (sans refaire toute la page, pour ne pas gêner la saisie ailleurs) */
+function updateStepsLive(){
+  const td=today(),n=stepsLive(td),goal=stepGoal(),pct=n/goal;
+  document.querySelectorAll('[data-sttot]').forEach(e=>{e.textContent=fmtN(n);});
+  document.querySelectorAll('[data-stpct]').forEach(e=>{e.textContent=Math.round(pct*100)+' %';});
+  document.querySelectorAll('[data-stkm]').forEach(e=>{e.textContent=nf(stepKm(n));});
+  document.querySelectorAll('[data-stkcal]').forEach(e=>{e.textContent=fmtN(Math.round(stepKcal(n)));});
+  document.querySelectorAll('[data-stmin]').forEach(e=>{e.textContent=stepMin(n);});
+  document.querySelectorAll('[data-string]').forEach(e=>{const c=+e.dataset.c;e.setAttribute('stroke-dasharray',(c*Math.min(1,pct)).toFixed(1)+' '+c.toFixed(1));e.style.stroke=pct>=1?'var(--good)':'var(--accent)';});
+  if(V.walk){
+    document.querySelectorAll('[data-walkn]').forEach(e=>{e.textContent=fmtN(V.walk.n);});
+    const sec=Math.floor((Date.now()-V.walk.t0)/1000);
+    document.querySelectorAll('[data-walkt]').forEach(e=>{e.textContent=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');});
+  }
+}
+function refreshSteps(){if(V.sheet&&V.sheet.type==='steps')renderSheet();render(true);}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'&&V.walk){const n=walkStop(true);V.walkMsg=n;}
+  else if(document.visibilityState==='visible'&&V.walkMsg!==undefined){const n=V.walkMsg;V.walkMsg=undefined;toast(n>0?'Comptage interrompu à l’extinction de l’écran : +'+fmtN(n)+' pas ajoutés':'Le comptage s’arrête quand l’écran s’éteint.');}
+});
+function stRing(d,size,sw,col){
+  const r=(size-sw)/2,c=2*Math.PI*r,n=stepsLive(d),pct=Math.min(1,n/stepGoal()),h=size/2,color=col||(n>=stepGoal()?'var(--good)':'var(--accent)');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${h}" cy="${h}" r="${r}" fill="none" style="stroke:color-mix(in srgb,var(--accent) 14%,transparent)" stroke-width="${sw}"/><circle cx="${h}" cy="${h}" r="${r}" fill="none" data-string="${d===today()?1:''}" data-c="${c.toFixed(1)}" style="stroke:${color}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${(c*pct).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${h} ${h})"/></svg>`;
+}
+function stWeek(d,cls){
+  const td=today(),mon=weekStart(d),goal=stepGoal(),L=['L','M','M','J','V','S','D'];
+  const vals=L.map((l,i)=>{const x=addDays(mon,i);return {l,x,n:stepsLive(x),fut:x>td};});
+  const mx=Math.max(goal*1.25,...vals.map(v=>v.n)),H=cls==='p'?70:92,gl=Math.round(goal/mx*H);
+  return `<div class="stwk" role="img" aria-label="Pas par jour de la semaine">${vals.map(v=>v.n>0?`<i class="${v.n>=goal?'ok':''}" style="height:${Math.max(6,Math.round(v.n/mx*H))}px"></i>`:`<i class="none" style="height:5px"></i>`).join('')}<span class="tg" style="bottom:${gl}px"></span></div>
+  <div class="stwl">${vals.map(v=>`<div class="${v.x===td?'now':''}">${v.l}</div>`).join('')}</div>`;
+}
+function stepsSheet(){
+  const s=V.sheet,td=today(),sd=s.d||td,goal=stepGoal(),n=stepsLive(sd),pct=n/goal,mon=weekStart(sd),L=['L','M','M','J','V','S','D'];
+  const C=2*Math.PI*15;
+  const strip=L.map((l,i)=>{const x=addDays(mon,i),nx=stepsLive(x),pr=Math.min(1,nx/goal),col=nx>=goal?'var(--good)':'var(--accent)';
+    return `<button class="md${x===sd?' sel':''}${x===td?' now':''}${x>td?' fut':''}" data-act="stday" data-date="${x}" aria-pressed="${x===sd}" aria-label="${fmt(x,{weekday:'long',day:'numeric',month:'long'})} : ${fmtN(nx)} pas"><span>${l}</span><em><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" class="tr"/>${nx>0?`<circle cx="18" cy="18" r="15" class="pg" style="stroke:${col}" stroke-dasharray="${(C*pr).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 18 18)"/>`:''}</svg><b>${parse(x).getDate()}</b></em></button>`;}).join('');
+  const editable=sd<=td,isToday=sd===td,ok=n>=goal;
+  const live=isToday?(V.walk
+    ?`<div class="stlive"><div class="lh"><span class="stdot"></span><div><b>Comptage en direct</b><small>Garde l’app ouverte et l’écran allumé</small></div><span data-walkt style="font-weight:800;font-variant-numeric:tabular-nums">${(()=>{const q=Math.floor((Date.now()-V.walk.t0)/1000);return Math.floor(q/60)+':'+String(q%60).padStart(2,'0');})()}</span></div><div class="ln"><b data-walkn>${fmtN(V.walk.n)}</b><span>pas cette marche</span></div><button class="btn block" data-act="stwalkstop">${icon('check',18)} Terminer et ajouter</button></div>`
+    :(walkSupported()
+      ?`<div class="stlive idle"><div class="lh"><span class="sic">${icon('steps',18)}</span><div><b>Compter en marchant</b><small>Utilise le capteur de mouvement du téléphone</small></div></div><button class="btn primary block" data-act="stwalk">${icon('play',18)} Démarrer une marche</button><p class="sthint">Le navigateur ne peut pas compter écran éteint ni en arrière-plan : garde l’app ouverte pendant la marche. Sinon, saisis simplement ton total du jour.</p></div>`
+      :`<div class="stlive idle"><div class="lh"><span class="sic">${icon('steps',18)}</span><div><b>Comptage en direct indisponible</b><small>Ce navigateur n’a pas de capteur de mouvement</small></div></div><p class="sthint">Saisis tes pas à la main (total du jour ou ajouts rapides).</p></div>`)):'';
+  const best=(()=>{let b=0;for(let i=0;i<7;i++)b=Math.max(b,stepsOf(addDays(td,-i)));return b;})();
+  return `<div class="mstrip" role="group" aria-label="Jours de la semaine" style="margin-top:2px">${strip}</div>
+  <div class="sthero"><div><b class="big" data-sttot>${fmtN(n)}</b><span class="lab">pas · ${isToday?'aujourd’hui':capN(fmt(sd,{weekday:'long',day:'numeric',month:'short'}))}</span><span class="pc${ok?' ok':''}">${ok?icon('check',13)+' Objectif atteint':'<span data-stpct>'+Math.round(pct*100)+' %</span> de '+fmtN(goal)}</span></div>
+    <div class="string">${stRing(sd,132,12)}<div class="c${ok?' ok':''}">${icon('steps',40)}</div></div></div>
+  <div class="sttiles"><div><b><span data-stkm>${nf(stepKm(n))}</span> <small>km</small></b><span>Distance</span></div><div><b><span data-stkcal>${fmtN(Math.round(stepKcal(n)))}</span> <small>kcal</small></b><span>Dépensées</span></div><div><b><span data-stmin>${stepMin(n)}</span> <small>min</small></b><span>De marche</span></div></div>
+  ${editable?`<div class="stblk"><h3>Ajouter des pas</h3><div class="stadd">${[500,1000,2000,5000].map(v=>`<button class="chip" data-act="stadd" data-n="${v}">${icon('plus',13)} ${fmtN(v)}</button>`).join('')}${n>0?`<button class="chip" data-act="stadd" data-n="-500">− 500</button>`:''}</div>
+    <div class="stin"><input id="stin" type="number" inputmode="numeric" min="0" max="100000" placeholder="Total du jour" aria-label="Total de pas du jour"><button class="btn primary" data-act="stset">Enregistrer</button></div>
+    <p class="sthint">Copie le total depuis Santé (iPhone) ou Google Fit : Forma remplace le total de la journée.</p></div>`:''}
+  ${live?`<div class="stblk">${live}</div>`:''}
+  <div class="stblk"><h3>Cette semaine</h3>${stWeek(sd)}
+    <div class="ststats"><div><b>${fmtN(stepAvg(7))}</b><span>Moyenne 7 j</span></div><div><b>${fmtN(best)}</b><span>Meilleur jour</span></div><div><b>${stepStreak()} j</b><span>Série objectif</span></div></div></div>
+  <div class="stblk"><h3>Objectif quotidien</h3><div class="stgoal"><button data-act="stgoal" data-n="-500" aria-label="Moins 500">−</button><div>${fmtN(goal)}<small>pas par jour</small></div><button data-act="stgoal" data-n="500" aria-label="Plus 500">+</button></div>
+    <div class="stpre">${[6000,8000,10000,12000].map(v=>`<button class="chip${goal===v?' on':''}" data-act="stgoalset" data-n="${v}">${fmtN(v)}</button>`).join('')}</div></div>
+  <div class="stfoot"><button class="link" data-act="stoff">Désactiver le suivi des pas</button></div>`;
+}
+function homeSteps(td){
+  if(!stepsOn())return `<div class="card hpers"><div class="hbh"><span class="sic">${icon('steps',18)}</span><div><h3>Suivre mes pas</h3><small>Objectif quotidien, distance et calories.</small></div></div><button class="btn block" data-act="sten">Activer</button></div>`;
+  const n=stepsLive(td),goal=stepGoal(),pct=n/goal,ok=n>=goal;
+  return `<button class="card hstep" data-act="stopen" aria-label="Pas : ${fmtN(n)} sur ${fmtN(goal)}. Ouvrir le détail">
+    <span class="sr">${stRing(td,84,9)}${icon('steps',24)}</span>
+    <span class="sv"><b><span data-sttot>${fmtN(n)}</span> <small>/ ${fmtN(goal)} pas</small></b><span><span data-stkm>${nf(stepKm(n))}</span> km · <span data-stkcal>${fmtN(Math.round(stepKcal(n)))}</span> kcal${ok?' · objectif atteint':''}</span>${V.walk?`<span class="live"><i class="stdot"></i>En direct · <span data-walkn>${fmtN(V.walk.n)}</span> pas</span>`:''}</span>
+    ${icon('right',18)}</button>`;
+}
+function progressSteps(){
+  if(!stepsOn())return '';
+  const goal=stepGoal();
+  return `<div class="sect"><h2>Pas · 7 jours</h2><button data-act="stopen">Détails</button></div>
+  <button class="card pstep" data-act="stopen" aria-label="Détail des pas">${stWeek(today(),'p')}<div class="pm"><span>Moyenne <b>${fmtN(stepAvg(7))}</b></span><span>Objectif <b>${fmtN(goal)}</b></span><span>Série <b>${stepStreak()} j</b></span></div></button>`;
+}
 function viewToday(){
   const td=today(),p=S.profile,h=new Date().getHours();
   const hello=(h<12?'Bonjour':h<18?'Bon après-midi':'Bonsoir')+(p.name?', '+esc(p.name):'');
@@ -2911,6 +3153,7 @@ function viewToday(){
   <div class="cstack">
     ${homeHero(td)}
     ${homeChallenge(td)}
+    ${homeSteps(td)}
   </div>
   ${homeNutrition(td)}
   <div class="cstack" style="margin-top:14px">
@@ -3271,6 +3514,7 @@ function viewProgress(){
   <div class="sect"><h2>Force par exercice</h2></div>
   ${exBlock}
   ${recs.length?`<div class="sect"><h2>Records personnels</h2>${withData.length>6?`<button class="link" data-act="openrecords">Tout voir</button>`:''}</div><div class="card" style="padding-top:8px;padding-bottom:8px">${recs.map(r=>`<div class="recrow">${mico(r.e.m)}<span class="ln"><b>${esc(r.e.n)}</b><small>${fmt(r.best.date,{day:'numeric',month:'short'})} · ${r.tp.kg>0?nf(r.tp.kg)+' kg × '+r.tp.reps:r.tp.reps+' reps'}</small></span><span class="rv gold">${r0(e1(r.tp))}<small style="font-size:12px"> ${r.u}</small></span></div>`).join('')}</div>`:''}
+  ${progressSteps()}
   <div class="sect"><h2>Poids de corps</h2></div>
   <div class="card">
     ${bw.length?`<div style="display:flex;justify-content:space-between;align-items:flex-end"><div class="bigk">${nf(bw[bw.length-1].kg)}<small>kg</small></div>${sl!==null?`<span class="pill">${sl>0?'+':''}${nf(sl)} kg / sem.</span>`:''}</div>${lineChart(bw.slice(-40).map(b=>({x:b.date,y:b.kg})),'kg')}`:`<p class="empty">Pèse-toi le matin, à jeun, pour une tendance fiable.</p>`}
@@ -3876,6 +4120,7 @@ function sheetHTML(){
       ${st<n-1?`<button class="btn ghost block" data-act="guideskip">Passer</button>`:''}
     </div>`;
   }
+  if(s.type==='steps'){title='Pas';body=stepsSheet();}
   return `<div class="backdrop" data-act="closesheet"></div><div class="sheetp${V.still?' still':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="grab"></div><div class="sh2"><h2>${esc(title)}</h2><button class="ibtn" data-act="closesheet" aria-label="Fermer">${icon('close',18)}</button></div>${body}</div>`;
 }
 function goGuideStep(step){
@@ -4916,7 +5161,7 @@ function speakRep(n,total){
 let WL=null;
 async function wakeOn(){try{if(navigator.wakeLock&&!WL){WL=await navigator.wakeLock.request('screen');WL.addEventListener('release',()=>{WL=null;});}}catch(e){}}
 function wakeOff(){try{if(WL){WL.release();WL=null;}}catch(e){}}
-document.addEventListener('visibilitychange',()=>{if(V.play&&document.visibilityState==='visible')wakeOn();});
+document.addEventListener('visibilitychange',()=>{if((V.play||V.walk)&&document.visibilityState==='visible')wakeOn();});
 
 /* ================= Favoris, plan de la semaine, courses ================= */
 const optSig=o=>o.items.map(i=>i.name+'|'+Math.round(i.g||0)).join(',');
@@ -5978,6 +6223,16 @@ function act(a,d){
       setTimeout(()=>{const el=document.querySelector('.card.ex');if(el)window.scrollTo({top:Math.max(0,el.getBoundingClientRect().top+window.scrollY-14),behavior:FX.calm()?'auto':'smooth'});},30);return;}
     case 'exclose':V.exOpen='none';render(true);return;
     case 'editavatar':V.tab='shop';V.shopTab='avatar';V.shopPreview={};render();return;
+    case 'sten':ensureSteps();S.steps.on=true;save();openSheet({type:'steps',d:today()});render(true);return;
+    case 'stopen':ensureSteps();openSheet({type:'steps',d:today()});return;
+    case 'stoff':ensureSteps();if(V.walk)walkStop(true);S.steps.on=false;save();closeSheet();render(true);toast('Suivi des pas désactivé (tes données sont conservées).');return;
+    case 'stday':V.sheet.d=d.date;renderSheet();return;
+    case 'stadd':{const dd=V.sheet.d||today();setSteps(dd,stepsOf(dd)+(+d.n),'manual');renderSheet();render(true);return;}
+    case 'stset':{const el=$('#stin'),v=el?num(el.value):NaN;if(!(v>=0)||el.value===''){toast('Saisis un nombre de pas.');return;}setSteps(V.sheet.d||today(),v,'manual');renderSheet();render(true);toast('Pas enregistrés.');return;}
+    case 'stgoal':ensureSteps();S.steps.goal=Math.max(1000,Math.min(50000,stepGoal()+(+d.n)));save();renderSheet();render(true);return;
+    case 'stgoalset':ensureSteps();S.steps.goal=+d.n;save();renderSheet();render(true);return;
+    case 'stwalk':walkStart();return;
+    case 'stwalkstop':walkStop(false);return;
     case 'dshift':V[d.k]=addDays(V[d.k],+d.n);if(d.k==='mdate')V.ideas=null;render(true);return;
     case 'goto':V.date=d.date;V.tab='workout';render();return;
     case 'daytrain':{S.dayOv=S.dayOv||{};const dt=d.date,ws=weekStart(dt),before=Object.assign({},weekSched(ws));S.dayOv[dt]='train';save();render(true);
